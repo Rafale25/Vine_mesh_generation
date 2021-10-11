@@ -125,8 +125,9 @@ class MyWindow(mglw.WindowConfig):
 		# -----------------------------
 
 		## mesh ----------------
-		self.mesh_buffer = self.ctx.buffer(reserve=24 * 1024)
-		self.mesh_buffer.write(array('f', self.gen_tree_debug_points()))
+		# self.mesh_buffer = self.ctx.buffer(reserve=24 * 1024)
+		# self.mesh_buffer.write(array('f', self.gen_tree_debug_points()))
+		self.mesh_buffer = self.ctx.buffer(data=array('f', self.gen_tree_debug_points()))
 		self.vao_mesh = self.ctx.vertex_array(
 			self.program,
 			[
@@ -142,37 +143,31 @@ class MyWindow(mglw.WindowConfig):
 
 			mat_translate_parent = glm.translate(glm.mat4(), node.parent.pos)
 			mat_translate_self = glm.translate(glm.mat4(), node.pos)
-			# mat_rotate = glm.orientation(dir, vec3(0,1,0))
+			mat_rotate = glm.orientation(dir, vec3(0,1,0))
 
-			NB = 8
+			NB = 32
 			for i in range(NB):
 				angle = (math.pi*2.0 / NB) * i
 				x = cos(angle) * 0.2
 				z = sin(angle) * 0.2
 
 				p = vec4(x, 0, z, 1.0)
-				p = mat_translate_self * p
+				# p_self = mat_translate_self * p
+				# p_parent = mat_translate_parent * p
+
+				p_self = mat_translate_self * mat_rotate * p
+				p_parent = mat_translate_parent * mat_rotate * p
+
 				# p = mat_translate * mat_rotate * p
 
-				# f = lambda x: self.mesh_buffer.append(x)
-				# f(p.x)
-				# f(p.y)
-				# f(p.z)
-				yield p.x
-				yield p.y
-				yield p.z
+				yield p_self.x
+				yield p_self.y
+				yield p_self.z
 
-			# p = vec4(0, 0, 1, 1)
-			# p = mat_translate * mat_rotate * p
+				yield p_parent.x
+				yield p_parent.y
+				yield p_parent.z
 
-			# a = dir
-			# b = p
-			# teta = math.acos((a.x*b.x + a.y*b.y + a.z*b.z) / (math.sqrt(pow(a.x, 2) + pow(a.y, 2) + pow(a.z, 2)) * math.sqrt(pow(b.x, 2) + pow(b.y, 2) + pow(b.z, 2))))
-			# print(glm.degrees(teta))
-
-			# yield p.x
-			# yield p.y
-			# yield p.z
 
 	def gen_tree_vertices(self, ):
 		for node in self.tree.nodes:
