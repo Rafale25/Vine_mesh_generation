@@ -36,6 +36,10 @@ class Camera:
 	rotx = 0.0
 	roty = 0.0
 
+	z_smooth = z
+	rotx_smooth = rotx
+	roty_smooth = roty
+
 class CameraFree:
 	x = 0
 	y = 0
@@ -53,9 +57,9 @@ class TreeNode:
 
 class Tree:
 	MAX_LEN = 5.0
-	MAX_DEPTH = 4
-	MIN_CHILDS = 1
-	MAX_CHILDS = 1
+	MAX_DEPTH = 5
+	MIN_CHILDS = 2
+	MAX_CHILDS = 2
 
 	def __init__(self):
 		self.root = TreeNode(parent=None, pos=vec3(0, 0, 0))
@@ -78,7 +82,7 @@ class Tree:
 			self.nodes.append(node)
 
 	def size(self):
-		return len(self.nodes) - 1
+		return len(self.nodes)
 
 	def generate(self):
 		self._generate(parent=self.root, n=Tree.MAX_DEPTH)
@@ -101,78 +105,113 @@ class MyWindow(mglw.WindowConfig):
 
 		self.width, self.height = self.window_size
 
+		self.draw_debug_lines = True
+		self.wireframe = False
+
 		self.tree = Tree()
 		self.tree.generate()
 
-		self.program = self.load_program(
-			vertex_shader="./tree.vert",
-			fragment_shader="./tree.frag")
+
+		self.program = {
+			"TREE":
+				self.load_program(
+					vertex_shader="./tree.vert",
+					fragment_shader="./tree.frag"),
+			"LINE":
+				self.load_program(
+					vertex_shader="./line.vert",
+					fragment_shader="./line.frag"),
+		}
 
 		## LINES ----------
-		self.buffer = self.ctx.buffer(reserve=(self.tree.size()+1) * 24)
+		# self.buffer = self.ctx.buffer(reserve=(self.tree.size()) * 24)
+		self.buffer = self.ctx.buffer(data=array('f', self.gen_tree_vertices()))
 
-		vertices = self.gen_tree_vertices()
-		self.buffer.write(array('f', vertices))
-
-		self.vao = self.ctx.vertex_array(
-			self.program,
+		self.vao_lines = self.ctx.vertex_array(
+			self.program["LINE"],
 			[
 				(self.buffer, '3f', 'in_vert'),
 			],
-			# index buffer
-			# the index buffer define each triangles
 		)
 		# -----------------------------
 
 		## mesh ----------------
-		# self.mesh_buffer = self.ctx.buffer(reserve=24 * 1024)
-		# self.mesh_buffer.write(array('f', self.gen_tree_debug_points()))
-		self.mesh_buffer = self.ctx.buffer(data=array('f', self.gen_tree_debug_points()))
+		data_vertices = []
+		data_indices = []
+		self.gen_tree_mesh_indices(data_vertices, data_indices)
+
+		self.buffer_vertices = self.ctx.buffer(data=array('f', data_vertices))
+		# self.buffer_normals = self.ctx.buffer(data=array('i', data_indices))
+		self.buffer_indices = self.ctx.buffer(data=array('i', data_indices))
+
 		self.vao_mesh = self.ctx.vertex_array(
-			self.program,
+			self.program["TREE"],
 			[
-				(self.mesh_buffer, '3f', 'in_vert'),
+				(self.buffer_vertices, '3f', 'in_vert'),
+				# (self.buffer_normals, '3f', 'in_normal'),
 			],
+			self.buffer_indices
 		)
 		# ------------------
+# """
+# 1 - 3 - 5
+# | \ | \ |
+# 0 - 2 - 4
+#
+# #indices for NB=3 ; GL_TRIANGLES
+# 0 2 1
+# 1 2 3
+#
+# 2 4 3
+# 3 4 5
+#
+# """
 
-	def gen_tree_debug_points(self):
-		for node in self.tree.nodes:
-			# unit vector director
+	def gen_tree_mesh_indices(self, vertices, indices, NB=8, branch_thickness=0.05):
+		## indices
+		total_vertices = NB*2
+
+		for i in range(self.tree.size()):
+			start_branch_index = i*total_vertices
+
+			for j in range(NB - 1):
+				index = start_branch_index + j*2
+
+				# 2 triangles
+				indices.extend((index, index+1, index+2))
+				indices.extend((index+1, index+3, index+2))
+
+			index = start_branch_index + (NB-1)*2
+			indices.extend((index, index+1, start_branch_index))
+			indices.extend((index+1, start_branch_index+1, start_branch_index))
+
+		# vertices
+		for j, node in enumerate(self.tree.nodes):
 			dir = glm.sub(node.parent.pos, node.pos)
 
 			mat_translate_parent = glm.translate(glm.mat4(), node.parent.pos)
 			mat_translate_self = glm.translate(glm.mat4(), node.pos)
 			mat_rotate = glm.orientation(dir, vec3(0,1,0))
 
-			NB = 32
 			for i in range(NB):
 				angle = (math.pi*2.0 / NB) * i
-				x = cos(angle) * 0.2
-				z = sin(angle) * 0.2
+				x = cos(angle) * branch_thickness
+				z = sin(angle) * branch_thickness
 
 				p = vec4(x, 0, z, 1.0)
-				# p_self = mat_translate_self * p
-				# p_parent = mat_translate_parent * p
 
 				p_self = mat_translate_self * mat_rotate * p
 				p_parent = mat_translate_parent * mat_rotate * p
 
-				# p = mat_translate * mat_rotate * p
+				vertices.extend(p_self.xyz)
+				vertices.extend(p_parent.xyz)
 
-				yield p_self.x
-				yield p_self.y
-				yield p_self.z
-
-				yield p_parent.x
-				yield p_parent.y
-				yield p_parent.z
 
 
 	def gen_tree_vertices(self, ):
 		for node in self.tree.nodes:
 			# unit vector director
-			v = glm.sub(node.parent.pos, node.pos)
+			# dir = glm.sub(node.parent.pos, node.pos)
 
 			# find size of circle
 			# size = 1.0
@@ -188,32 +227,38 @@ class MyWindow(mglw.WindowConfig):
 
 
 	def update_uniforms(self, frametime):
-		mat_rotx = glm.rotate(glm.mat4(1.0), -Camera.roty, glm.vec3(1.0, 0.0, 0.0))
-		mat_roty = glm.rotate(glm.mat4(1.0), Camera.rotx, glm.vec3(0.0, 1.0, 0.0))
+		mat_rotx = glm.rotate(glm.mat4(1.0), -Camera.roty_smooth, glm.vec3(1.0, 0.0, 0.0))
+		mat_roty = glm.rotate(glm.mat4(1.0), Camera.rotx_smooth, glm.vec3(0.0, 1.0, 0.0))
 		mat_rotz = glm.rotate(glm.mat4(1.0), 0.0, glm.vec3(0.0, 0.0, 1.0))
 
-		translate = glm.translate(glm.mat4(1.0), glm.vec3(0.0, 0.0, Camera.z))
+		translate = glm.translate(glm.mat4(1.0), glm.vec3(0.0, 0.0, Camera.z_smooth))
 		modelview = translate * mat_rotx * mat_roty * mat_rotz
 
 		aspect_ratio = self.width / self.height
 		perspective = glm.perspective(-80, aspect_ratio, 0.1, 1000)
 
-		self.program['mvp'].write(perspective * modelview)
+		self.program['TREE']['mvp'].write(perspective * modelview)
 
 	def update(self, time, frametime):
 		self.update_uniforms(frametime)
+
+		Camera.z_smooth = Camera.z_smooth + (Camera.z - Camera.z_smooth) * 0.5
+		Camera.rotx_smooth = Camera.rotx_smooth + (Camera.rotx - Camera.rotx_smooth) * 0.5
+		Camera.roty_smooth = Camera.roty_smooth + (Camera.roty - Camera.roty_smooth) * 0.5
 
 	def render(self, time, frametime):
 		self.update(time, frametime)
 
 		self.ctx.clear(0.0, 0.0, 0.0)
-		# self.ctx.enable_only(moderngl.CULL_FACE | moderngl.DEPTH_TEST | moderngl.PROGRAM_POINT_SIZE)
 		self.ctx.enable_only(moderngl.DEPTH_TEST | moderngl.PROGRAM_POINT_SIZE)
+		# self.ctx.enable_only(moderngl.DEPTH_TEST | moderngl.PROGRAM_POINT_SIZE)
+		# self.ctx.wireframe = True
+		# self.ctx.cull_face = True
 
+		if self.draw_debug_lines:
+			self.vao_lines.render(mode=moderngl.LINES)
 
-		self.vao.render(mode=moderngl.LINES)
-		# self.vao_mesh.render(mode=moderngl.TRIANGLES)
-		self.vao_mesh.render(mode=moderngl.POINTS)
+		self.vao_mesh.render(mode=moderngl.TRIANGLES)
 
 		self.imgui_newFrame()
 		self.imgui_render()
@@ -224,6 +269,9 @@ class MyWindow(mglw.WindowConfig):
 	def imgui_newFrame(self):
 		imgui.new_frame()
 		imgui.begin("Properties", True)
+
+		c, self.draw_debug_lines = imgui.checkbox("debug lines", self.draw_debug_lines)
+		c, self.ctx.wireframe = imgui.checkbox("Wireframe", self.ctx.wireframe)
 
 		imgui.end()
 
@@ -248,13 +296,13 @@ class MyWindow(mglw.WindowConfig):
 		Camera.rotx += dx * 0.002
 		Camera.roty += -dy * 0.002
 
-		Camera.rotx %= 2*pi
+		# Camera.rotx %= 2*pi
 		Camera.roty = fclamp(Camera.roty, -pi/2, pi/2)
 
 	def mouse_scroll_event(self, x_offset, y_offset):
 		self.imgui.mouse_scroll_event(x_offset, y_offset)
 
-		Camera.z += y_offset
+		Camera.z += y_offset * 0.1
 		Camera.z = fclamp(Camera.z, -10000, 0)
 
 	def mouse_press_event(self, x, y, button):
