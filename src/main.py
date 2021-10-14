@@ -21,7 +21,7 @@ from random import uniform
 from array import array
 
 from utils import *
-from _config import CameraOrbit, CameraFree, Light
+from _config import CameraOrbit, Camera, Light
 
 from tree import Tree, TreeNode
 
@@ -54,6 +54,8 @@ class MyWindow(mglw.WindowConfig):
 		self.cull_face = True
 		self.draw_debug = False
 		self.draw_mesh = True
+
+		self.camera = Camera()
 
 		self.tree = Tree()
 		self.tree.generate()
@@ -171,28 +173,25 @@ class MyWindow(mglw.WindowConfig):
 			yield node.parent.pos.z
 
 	def update_uniforms(self, frametime):
-		mat_rotx = glm.rotate(glm.mat4(1.0), -CameraOrbit.roty_smooth, glm.vec3(1.0, 0.0, 0.0))
-		mat_roty = glm.rotate(glm.mat4(1.0), CameraOrbit.rotx_smooth, glm.vec3(0.0, 1.0, 0.0))
-		mat_rotz = glm.rotate(glm.mat4(1.0), 0.0, glm.vec3(0.0, 0.0, 1.0))
+		# mat_rotx = glm.rotate(glm.mat4(1.0), -Camera.roty_smooth, glm.vec3(1.0, 0.0, 0.0))
+		# mat_roty = glm.rotate(glm.mat4(1.0), Camera.rotx_smooth, glm.vec3(0.0, 1.0, 0.0))
+		# mat_rotz = glm.rotate(glm.mat4(1.0), 0.0, glm.vec3(0.0, 0.0, 1.0))
+		#
+		# translate = glm.translate(glm.mat4(1.0), glm.vec3(Camera.x, Camera.y, Camera.z_smooth))
+		# modelview = translate * (mat_rotx * mat_roty * mat_rotz)
 
-		translate = glm.translate(glm.mat4(1.0), glm.vec3(CameraOrbit.x, CameraOrbit.y, CameraOrbit.z_smooth))
-		modelview = translate * (mat_rotx * mat_roty * mat_rotz)
+		view = self.camera.view_matrix()
 
 		aspect_ratio = self.width / self.height
-		perspective = glm.perspective(-80, aspect_ratio, 0.1, 1000)
+		perspective = glm.perspective(-self.camera.fov, aspect_ratio, 0.1, 1000)
 
-		mvp = perspective * modelview
+		mvp = perspective * view
 		for str, program in self.program.items():
 			program['mvp'].write(mvp)
 
 		self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
 
 	def update(self, time_since_start, frametime):
-		CameraOrbit.z_smooth = CameraOrbit.z_smooth + (CameraOrbit.z - CameraOrbit.z_smooth) * 0.5
-		CameraOrbit.rotx_smooth = CameraOrbit.rotx_smooth + (CameraOrbit.rotx - CameraOrbit.rotx_smooth) * 0.5
-		CameraOrbit.roty_smooth = CameraOrbit.roty_smooth + (CameraOrbit.roty - CameraOrbit.roty_smooth) * 0.5
-
-
 		# Light.x = cos(time_since_start) * 200.0
 		# Light.y = -20.0
 		# Light.z = sin(time_since_start) * 200.0
@@ -200,18 +199,25 @@ class MyWindow(mglw.WindowConfig):
 		Light.y = 20.0
 		Light.z = 40.0
 
-		if self.wnd.is_key_pressed(self.wnd.keys.UP):
-			CameraOrbit.y -= 0.1;
-		if self.wnd.is_key_pressed(self.wnd.keys.DOWN):
-			CameraOrbit.y += 0.1;
-
+		if self.wnd.is_key_pressed(self.wnd.keys.Z):
+			self.camera.move_forward(self.camera.speed)
+		if self.wnd.is_key_pressed(self.wnd.keys.S):
+			self.camera.move_forward(-self.camera.speed)
+		if self.wnd.is_key_pressed(self.wnd.keys.Q):
+			self.camera.move_sideways(self.camera.speed)
+		if self.wnd.is_key_pressed(self.wnd.keys.D):
+			self.camera.move_sideways(-self.camera.speed)
+		if self.wnd.is_key_pressed(self.wnd.keys.E):
+			self.camera.pos.y -= self.camera.speed
+		if self.wnd.is_key_pressed(self.wnd.keys.A):
+			self.camera.pos.y += self.camera.speed
 
 		self.update_uniforms(frametime)
 
 	def render(self, time_since_start, frametime):
 		self.update(time_since_start, frametime)
 
-		self.ctx.clear(0.0, 0.0, 0.0)
+		self.ctx.clear(0.2, 0.2, 0.2)
 		# self.ctx.enable_only(moderngl.NOTHING)
 		# self.ctx.enable_only(moderngl.PROGRAM_POINT_SIZE)
 		self.ctx.enable_only(

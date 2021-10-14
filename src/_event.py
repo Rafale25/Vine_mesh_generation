@@ -1,7 +1,7 @@
 import imgui
 
 from utils import *
-from _config import CameraOrbit, CameraFree
+from _config import CameraOrbit, Camera
 
 def resize(self, width: int, height: int):
 	self.imgui.resize(width, height)
@@ -18,16 +18,18 @@ def mouse_drag_event(self, x, y, dx, dy):
 	io = imgui.get_io()
 	if io.want_capture_mouse: return
 
-	CameraOrbit.rotx += dx * 0.002
-	CameraOrbit.roty += -dy * 0.002
-	CameraOrbit.roty = fclamp(CameraOrbit.roty, -pi/2, pi/2)
+	self.camera.rot.x -= dy * 0.002
+	self.camera.rot.y -= dx * 0.002
+	# CameraOrbit.rotx += dx * 0.002
+	# CameraOrbit.roty += -dy * 0.002
+	# CameraOrbit.roty = fclamp(CameraOrbit.roty, -pi/2, pi/2)
 	# CameraOrbit.rotx %= 2*pi
 
 def mouse_scroll_event(self, x_offset, y_offset):
 	self.imgui.mouse_scroll_event(x_offset, y_offset)
 
-	CameraOrbit.z += y_offset * 0.1
-	CameraOrbit.z = fclamp(CameraOrbit.z, -10000, 0)
+	# CameraOrbit.z += y_offset * 0.1
+	# CameraOrbit.z = fclamp(CameraOrbit.z, -10000, 0)
 
 def mouse_press_event(self, x, y, button):
 	self.imgui.mouse_press_event(x, y, button)
