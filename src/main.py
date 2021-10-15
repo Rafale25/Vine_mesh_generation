@@ -92,6 +92,7 @@ class MyWindow(mglw.WindowConfig):
     from _debug_draw import\
         init_debug_draw,\
         debug_line,\
+        debug_sphere,\
         debug_draw
 
 # """
@@ -108,7 +109,7 @@ class MyWindow(mglw.WindowConfig):
 # """
 
     # vertex, normals (not indices because normals need duplicated vertex data)
-    def gen_tree_mesh(self, data, NB=32, branch_thickness=0.1):
+    def gen_tree_mesh(self, data, NB=128, branch_thickness=0.1):
         for j, node in enumerate(self.tree.nodes):
             dir = glm.sub(node.parent.pos, node.pos)
 
@@ -174,26 +175,24 @@ class MyWindow(mglw.WindowConfig):
     def update_uniforms(self, frametime):
         view = self.camera.view_matrix()
 
-        view_dir = glm.transpose(view)
-        # print(view_dir)
-        # print()
-
         aspect_ratio = self.width / self.height
-        perspective = glm.perspective(-self.camera.fov, aspect_ratio, 0.1, 1000)
+        perspective = glm.perspective(self.camera.fov, aspect_ratio, 0.1, 1000)
 
         mvp = perspective * view
         for str, program in self.program.items():
             program['mvp'].write(mvp)
 
+
+        view_r = glm.transpose(view)
+        view_dir = vec3(view_r[2][0], view_r[2][1], view_r[2][2])
+
+        self.program["TREE"]["view_direction"].write(view_dir)
         self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
 
     def update(self, time_since_start, frametime):
-        # Light.x = cos(time_since_start) * 200.0
-        # Light.y = -20.0
-        # Light.z = sin(time_since_start) * 200.0
-        Light.x = 40.0
-        Light.y = 20.0
-        Light.z = 40.0
+        Light.x = cos(time_since_start*0.2) * 6.0
+        Light.y = 6.0
+        Light.z = sin(time_since_start*0.2) * 6.0
 
         if self.wnd.is_key_pressed(self.wnd.keys.Z):
             self.camera.move_forward(self.camera.speed)
@@ -213,7 +212,7 @@ class MyWindow(mglw.WindowConfig):
     def render(self, time_since_start, frametime):
         self.update(time_since_start, frametime)
 
-        self.ctx.clear(0.2, 0.2, 0.2)
+        self.ctx.clear(0.3, 0.3, 0.3)
         # self.ctx.enable_only(moderngl.NOTHING)
         # self.ctx.enable_only(moderngl.PROGRAM_POINT_SIZE)
         self.ctx.enable_only(
@@ -229,6 +228,7 @@ class MyWindow(mglw.WindowConfig):
         self.debug_line(0, 0, 0, 1, 0, 0)
         self.debug_line(0, 0, 0, 0, 1, 0)
         self.debug_line(0, 0, 0, 0, 0, 1)
+        self.debug_sphere(Light.x, Light.y, Light.z)
         self.debug_draw()
 
         self.imgui_newFrame(frametime)

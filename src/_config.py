@@ -18,7 +18,7 @@ class Camera:
     def __init__(self):
         self.pos = glm.vec3(0, 0, -8)
         self.rot = glm.vec3(0, 0, 0)
-        self.fov = 80
+        self.fov = glm.radians(80)
         self.speed = 0.05
 
     def move_forward(self, value):

@@ -5,21 +5,21 @@ in vec3 v_normal;
 out vec4 fragColor;
 
 uniform vec3 lightPosition;
+uniform vec3 view_direction;
 
 void main() {
     float intensity = dot(normalize(lightPosition), v_normal);
 
-    float value = 0.0;
-    // vec3 view_vector = vec3(0, 0, -1);
+    float value = intensity;
 
+    // if (intensity > 0.5)
+    //     value = 1.0;
+    // else
+    //     value = 0.4;
 
-    if (intensity > 0.5)
-        value = 1.0;
-    else
-        value = 0.5;
-
-    // if (dot(v_normal, view_vector) <= 0.001)
-    //     value = 0.0;
+    if (dot(v_normal, view_direction) <= 0.2)
+        value = value*0.999;
+        // value = 0.0;
 
     // if (intensity > 0.95)
     //     value = 1.0;
