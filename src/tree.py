@@ -16,8 +16,8 @@ class TreeNode:
 
 class Tree:
 	MAX_LEN = 5.0
-	MAX_DEPTH = 10
-	MIN_CHILDS = 1
+	MAX_DEPTH = 2
+	MIN_CHILDS = 2
 	MAX_CHILDS = 2
 
 	def __init__(self):

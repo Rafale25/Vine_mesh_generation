@@ -7,24 +7,8 @@ import glm
 # 	angle = uniform(-math.pi, math.pi);
 # 	return cos(angle), sin(angle);
 
-def triangle_normal(p1, p2, p3):
-	"""
-	So for a triangle p1, p2, p3,
-	if the vector U = p2 - p1 and the vector V = p3 - p1
-	then the normal N = U X V and can be calculated by:
-	"""
-
-	u = glm.sub(p2, p1)
-	v = glm.sub(p3, p1)
-
-	n = glm.vec3()
-
-	n.x = u.y*v.z - u.z*v.y
-	n.y = u.z*v.x - u.x*v.z
-	n.z = u.x*v.y - u.y*v.x
-
-	return n
-
+def triangle_normal(p0, p1, p2):
+	return glm.normalize(glm.cross(p1-p0, p2-p0))
 
 def random_uniform_vec3():
 	x, y, z = uniform(-1, 1), uniform(-1, 1), uniform(-1, 1)

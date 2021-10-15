@@ -45,7 +45,8 @@ class MyWindow(mglw.WindowConfig):
         self.ctx.wireframe = False
 
         self.cull_face = True
-        self.draw_debug = False
+        self.draw_skeleton = False
+        self.draw_normals = False
         self.draw_mesh = True
 
         self.camera = Camera()
@@ -58,6 +59,11 @@ class MyWindow(mglw.WindowConfig):
                 self.load_program(
                     vertex_shader="./tree.vert",
                     fragment_shader="./tree.frag"),
+            "TREE_NORMAL":
+                self.load_program(
+                    vertex_shader="./tree_normal.vert",
+                    fragment_shader="./tree_normal.frag",
+                    geometry_shader="./tree_normal.geom"),
             "LINE":
                 self.load_program(
                     vertex_shader="./line.vert",
@@ -80,8 +86,16 @@ class MyWindow(mglw.WindowConfig):
         self.gen_tree_mesh(data)
 
         self.buffer_mesh = self.ctx.buffer(data=array('f', data))
+
         self.vao_mesh = self.ctx.vertex_array(
             self.program["TREE"],
+            [
+                (self.buffer_mesh, '3f 3f', 'in_vert', 'in_normal')
+            ],
+        )
+
+        self.vao_mesh_normal = self.ctx.vertex_array(
+            self.program["TREE_NORMAL"],
             [
                 (self.buffer_mesh, '3f 3f', 'in_vert', 'in_normal')
             ],
@@ -109,7 +123,7 @@ class MyWindow(mglw.WindowConfig):
 # """
 
     # vertex, normals (not indices because normals need duplicated vertex data)
-    def gen_tree_mesh(self, data, NB=128, branch_thickness=0.1):
+    def gen_tree_mesh(self, data, NB=256, branch_thickness=0.1):
         for j, node in enumerate(self.tree.nodes):
             dir = glm.sub(node.parent.pos, node.pos)
 
@@ -135,12 +149,8 @@ class MyWindow(mglw.WindowConfig):
                 a1 = mat_translate_parent * mat_rotate * p1
                 a2 = mat_translate_self * mat_rotate * p2
 
-                # triangle 2
-                b1 = mat_translate_parent * mat_rotate * p1
-                b3 = mat_translate_self * mat_rotate * p2
-                b2 = mat_translate_parent * mat_rotate * p2
-
-                a_normal = triangle_normal(a0, a1, a2).xyz
+                a_normal = triangle_normal(a0.xyz, a1.xyz, a2.xyz)
+                # print(glm.normalize(a_normal))
 
                 data.extend(a0.xyz)
                 data.extend(a_normal) # one for each of the 3 vertices
@@ -151,7 +161,12 @@ class MyWindow(mglw.WindowConfig):
                 data.extend(a2.xyz)
                 data.extend(a_normal)
 
-                b_normal = triangle_normal(b1, b2, b3).xyz
+                # triangle 2
+                b1 = mat_translate_parent * mat_rotate * p1
+                b3 = mat_translate_self * mat_rotate * p2
+                b2 = mat_translate_parent * mat_rotate * p2
+
+                b_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz)
 
                 data.extend(b1.xyz)
                 data.extend(b_normal)
@@ -176,17 +191,20 @@ class MyWindow(mglw.WindowConfig):
         view = self.camera.view_matrix()
 
         aspect_ratio = self.width / self.height
-        perspective = glm.perspective(self.camera.fov, aspect_ratio, 0.1, 1000)
+        projection = glm.perspective(self.camera.fov, aspect_ratio, 0.1, 1000)
 
-        mvp = perspective * view
+        mvp = projection * view
         for str, program in self.program.items():
-            program['mvp'].write(mvp)
+            if 'mvp' in program:
+                program['mvp'].write(mvp)
 
 
-        view_r = glm.transpose(view)
-        view_dir = vec3(view_r[2][0], view_r[2][1], view_r[2][2])
+        # view_r = glm.transpose(view)
+        # view_dir = vec3(view_r[2][0], view_r[2][1], view_r[2][2])
 
-        self.program["TREE"]["view_direction"].write(view_dir)
+        # print(self.camera.pos)
+        self.program["TREE"]["view_position"].write(self.camera.pos)
+        # self.program["TREE"]["view_direction"].write(view_dir)
         self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
 
     def update(self, time_since_start, frametime):
@@ -219,16 +237,18 @@ class MyWindow(mglw.WindowConfig):
             moderngl.CULL_FACE * self.cull_face |
             moderngl.DEPTH_TEST)
 
+
         if self.draw_mesh:
             self.vao_mesh.render(mode=moderngl.TRIANGLES)
-
-        if self.draw_debug:
+        if self.draw_normals:
+            self.vao_mesh_normal.render(mode=moderngl.TRIANGLES)
+        if self.draw_skeleton:
             self.vao_lines.render(mode=moderngl.LINES)
 
-        self.debug_line(0, 0, 0, 1, 0, 0)
-        self.debug_line(0, 0, 0, 0, 1, 0)
-        self.debug_line(0, 0, 0, 0, 0, 1)
-        self.debug_sphere(Light.x, Light.y, Light.z)
+        self.debug_line(0, 0, 0, 0.5, 0, 0)
+        self.debug_line(0, 0, 0, 0, 0.5, 0)
+        self.debug_line(0, 0, 0, 0, 0, 0.5)
+        self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
         self.debug_draw()
 
         self.imgui_newFrame(frametime)

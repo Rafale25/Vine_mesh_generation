@@ -9,8 +9,10 @@ def imgui_newFrame(self, frametime):
     c, self.ctx.wireframe = imgui.checkbox("Wireframe", self.ctx.wireframe)
     c, self.cull_face = imgui.checkbox("Cull Face", self.cull_face)
 
-    c, self.draw_debug = imgui.checkbox("debug lines", self.draw_debug)
     c, self.draw_mesh = imgui.checkbox("mesh", self.draw_mesh)
+    c, self.draw_skeleton = imgui.checkbox("skeleton", self.draw_skeleton)
+    c, self.draw_normals = imgui.checkbox("normals", self.draw_normals)
+
 
     imgui.end()
 
