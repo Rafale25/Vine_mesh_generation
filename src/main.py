@@ -70,7 +70,7 @@ class MyWindow(mglw.WindowConfig):
                     fragment_shader="./line.frag"),
         }
 
-        ## LINES ----------
+        ## skeleton ----------
         self.buffer_debug = self.ctx.buffer(data=array('f', self.gen_tree_skeleton()))
 
         self.vao_lines = self.ctx.vertex_array(
@@ -101,6 +101,21 @@ class MyWindow(mglw.WindowConfig):
             ],
         )
 
+        ## depth texture --
+        # self.quad_2d = mglw.geometry.quad_2d(
+        #     size=self.window_size,
+        #     pos=(self.width/2, self.height/2),
+        #     normals=False)
+        # self.shader_framebuffer = self.load_program(
+        #     vertex_shader="./framebuffer.vert",
+        #     fragment_shader="./framebuffer.frag"
+        # )
+
+        # self.depth_texture = self.ctx.texture(self.wnd.size, 3)
+        # depth_attachment = self.ctx.depth_renderbuffer(self.wnd.size)
+        # self.fbo = self.ctx.framebuffer(self.depth_texture, depth_attachment)
+        # --------
+
         self.init_debug_draw()
 
     from _debug_draw import\
@@ -123,7 +138,7 @@ class MyWindow(mglw.WindowConfig):
 # """
 
     # vertex, normals (not indices because normals need duplicated vertex data)
-    def gen_tree_mesh(self, data, NB=256, branch_thickness=0.1):
+    def gen_tree_mesh(self, data, NB=32, branch_thickness=0.1):
         for j, node in enumerate(self.tree.nodes):
             dir = glm.sub(node.parent.pos, node.pos)
 
@@ -150,7 +165,6 @@ class MyWindow(mglw.WindowConfig):
                 a2 = mat_translate_self * mat_rotate * p2
 
                 a_normal = triangle_normal(a0.xyz, a1.xyz, a2.xyz)
-                # print(glm.normalize(a_normal))
 
                 data.extend(a0.xyz)
                 data.extend(a_normal) # one for each of the 3 vertices
@@ -202,9 +216,8 @@ class MyWindow(mglw.WindowConfig):
         # view_r = glm.transpose(view)
         # view_dir = vec3(view_r[2][0], view_r[2][1], view_r[2][2])
 
-        # print(self.camera.pos)
-        self.program["TREE"]["view_position"].write(self.camera.pos)
         # self.program["TREE"]["view_direction"].write(view_dir)
+        self.program["TREE"]["view_position"].write(self.camera.pos)
         self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
 
     def update(self, time_since_start, frametime):
@@ -230,6 +243,8 @@ class MyWindow(mglw.WindowConfig):
     def render(self, time_since_start, frametime):
         self.update(time_since_start, frametime)
 
+        # self.fbo.use()
+
         self.ctx.clear(0.3, 0.3, 0.3)
         # self.ctx.enable_only(moderngl.NOTHING)
         # self.ctx.enable_only(moderngl.PROGRAM_POINT_SIZE)
@@ -250,6 +265,9 @@ class MyWindow(mglw.WindowConfig):
         self.debug_line(0, 0, 0, 0, 0, 0.5)
         self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
         self.debug_draw()
+
+        # self.depth_texture.use(location=0)
+        # self.quad_2d.render(self.shader_framebuffer)
 
         self.imgui_newFrame(frametime)
         self.imgui_render()
