@@ -11,6 +11,7 @@ uniform vec2 resolution;
 uniform float near;
 uniform float far;
 
+// depth texture
 uniform sampler2D texture0;
 
 float linear_depth(float z) {
@@ -47,23 +48,6 @@ void main() {
     else
         value = 0.4;
 
-    vec2 texel = gl_FragCoord.xy / resolution;
-    float z = texture(texture0, texel).r;
-
-    float d = 0.0;
-    for (int i = 0 ; i < 3 ; ++i) {
-        d += get_dist_at(texel, i);
-    }
-    // d /= 4;
-
-    float diff = d - z;
-
-    if (diff > 0.1)
-        value = 0.0;
-
-    // if ( dot(v_normal, dir) <= 0.5)
-    //     value = 0.0;
-
     // if (intensity > 0.95)
     //     value = 1.0;
     // else if (intensity > 0.75)
@@ -74,6 +58,17 @@ void main() {
     //     value = 0.4;
     // else
     //     value = 0.2;
+
+    vec2 texel = gl_FragCoord.xy / resolution;
+    float z = texture(texture0, texel).r;
+
+    float d = get_dist_at(texel, 2);
+
+    float diff = d - z;
+
+    if (diff > 0.001)
+        value = 0.0;
+
 
     fragColor = vec4(0.0, value, 0.0, 1.0);
     // fragColor = vec4(0.0, clamp(intensity, 0.2, 1.0) * gl_FragCoord.z, 0.0, 1.0);

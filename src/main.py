@@ -29,7 +29,15 @@ from _config import CameraOrbit, Camera, Light
 from tree import Tree, TreeNode
 
 """
-render tree depth with only vertices
+first pass:
+    - geometry shader for the mesh
+    - draw normally with colors and toons shader
+
+    - draw to color texture (different color for every branch, passed from geometry shader)
+    - draw to depth texture
+
+seconde pass:
+    add outline to texture using depth and color texture
 
 """
 
@@ -95,9 +103,7 @@ class MyWindow(moderngl_window.WindowConfig):
 
 
         ## mesh --
-        data = []
-        self.gen_tree_mesh(data)
-        self.buffer_mesh = self.ctx.buffer(data=array('f', data))
+        self.buffer_mesh = self.ctx.buffer(data=array('f', self.gen_tree_mesh()))
 
         self.vao_mesh = VAO(name="mesh", mode=moderngl.TRIANGLES)
         self.vao_mesh.buffer(self.buffer_mesh, '3f 3f', ['in_vert', 'in_normal'])
@@ -105,7 +111,6 @@ class MyWindow(moderngl_window.WindowConfig):
 
 
         # depth --
-        # self.quad_fs = geometry.quad_2d(pos=(0, 0), size=(0.2, 0.2))
         self.quad_depth = geometry.quad_2d(size=(0.5, 0.5), pos=(0.75, 0.75))
 
         self.offscreen_depth_texture = self.ctx.depth_texture(self.wnd.buffer_size)
@@ -137,7 +142,9 @@ class MyWindow(moderngl_window.WindowConfig):
 # """
 
     # vertex, normals (not indices because normals need duplicated vertex data)
-    def gen_tree_mesh(self, data, NB=32, branch_thickness=0.1):
+    def gen_tree_mesh(self, NB=16, branch_thickness=0.1):
+        data = []
+
         for j, node in enumerate(self.tree.nodes):
             dir = glm.sub(node.parent.pos, node.pos)
 
@@ -190,6 +197,8 @@ class MyWindow(moderngl_window.WindowConfig):
                 data.extend(b3.xyz)
                 data.extend(b_normal)
 
+        return data
+
     def gen_tree_skeleton(self):
         for node in self.tree.nodes:
             yield node.pos.x
@@ -203,7 +212,6 @@ class MyWindow(moderngl_window.WindowConfig):
     def update_uniforms(self, frametime):
         modelview = self.camera.view_matrix()
 
-        # mvp = self.projection * modelview
         for str, program in self.program.items():
             if 'modelview' in program:
                 program['modelview'].write(modelview)
@@ -213,11 +221,6 @@ class MyWindow(moderngl_window.WindowConfig):
         self.geometry_program['modelview'].write(modelview)
         self.geometry_program['projection'].write(self.projection)
 
-        # view_r = glm.transpose(view)
-        # view_dir = vec3(view_r[2][0], view_r[2][1], view_r[2][2])
-        # self.program["TREE"]["view_direction"].write(view_dir)
-
-        # self.program["TREE"]["view_position"].write(self.camera.pos)
         self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
         self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
         self.program["TREE"]['near'].value = self.camera.near
@@ -256,13 +259,8 @@ class MyWindow(moderngl_window.WindowConfig):
         self.vao_mesh.render(program=self.geometry_program)
 
         self.ctx.screen.use()
-        # self.ctx.disable(moderngl.DEPTH_TEST)
 
-        ## draw debug depthbuffer --
         self.offscreen_depth_texture.use(location=0)
-        self.quad_depth.render(self.linearize_depth_program)
-
-
         if self.draw_mesh:
             self.vao_mesh.render(program=self.program["TREE"])
         if self.draw_normals:
@@ -276,6 +274,11 @@ class MyWindow(moderngl_window.WindowConfig):
         self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
         self.debug_draw()
 
+
+        ## draw debug depthbuffer --
+        self.ctx.disable(moderngl.DEPTH_TEST)
+        self.quad_depth.render(self.linearize_depth_program)
+
         self.imgui_newFrame(frametime)
         self.imgui_render()
 
@@ -283,6 +286,11 @@ class MyWindow(moderngl_window.WindowConfig):
         print("Cleaning up ressources.")
         self.buffer_debug.release()
         self.buffer_mesh.release()
+        self.offscreen_depth_texture.release()
+        self.offscreen.release()
+        self.geometry_program.release()
+        self.linearize_depth_program.release()
+
         for str, program in self.program.items():
             program.release()
 
