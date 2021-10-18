@@ -249,11 +249,11 @@ class MyWindow(moderngl_window.WindowConfig):
         if self.draw_skeleton:
             self.vao_skeleton.render(program=self.program["LINE"])
 
-        # self.debug_line(0, 0, 0, 0.5, 0, 0)
-        # self.debug_line(0, 0, 0, 0, 0.5, 0)
-        # self.debug_line(0, 0, 0, 0, 0, 0.5)
-        # self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
-        # self.debug_draw()
+        self.debug_line(0, 0, 0, 0.5, 0, 0)
+        self.debug_line(0, 0, 0, 0, 0.5, 0)
+        self.debug_line(0, 0, 0, 0, 0, 0.5)
+        self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
+        self.debug_draw()
 
         ## draw debug depthbuffer --
         # self.ctx.disable(moderngl.DEPTH_TEST)

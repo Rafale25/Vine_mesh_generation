@@ -12,7 +12,7 @@ out vec4 fragColor;
 // uniform float far;
 
 // depth texture
-uniform sampler2D texture0;
+// uniform sampler2D texture0;
 
 // float linear_depth(float z) {
 //     return (2.0 * near) / (far + near - z * (far - near));
@@ -68,7 +68,6 @@ void main() {
     // if (diff > 0.001)
     //     value = 0.0;
 
-
-    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    fragColor = vec4(1.0, 0.0, 1.0, 1.0);
     // fragColor = vec4(0.0, value, 0.0, 1.0);
 }

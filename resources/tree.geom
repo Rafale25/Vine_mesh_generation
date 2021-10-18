@@ -9,10 +9,10 @@ uniform mat4 projection;
 const float normal_scale = 0.1;
 
 void main() {
-    vec4 v0 = projection * modelview * gl_in[0].gl_Position;
+    gl_Position = projection * modelview * gl_in[0].gl_Position;
     EmitVertex();
 
-    vec4 v1 = projection * modelview * gl_in[1].gl_Position;
+    gl_Position = projection * modelview * gl_in[1].gl_Position;
     EmitVertex();
 
     EndPrimitive();
