@@ -16,7 +16,7 @@ class TreeNode:
 
 class Tree:
     MAX_LEN = 5.0
-    MAX_DEPTH = 4
+    MAX_DEPTH = 3
     MIN_CHILDS = 2
     MAX_CHILDS = 2
 

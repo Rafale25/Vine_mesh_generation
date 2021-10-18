@@ -70,11 +70,16 @@ class MyWindow(moderngl_window.WindowConfig):
         self.tree = Tree()
         self.tree.generate()
 
+        # d = self.gen_tree_mesh()
+        # print(d)
+        # print((len(d) / 2)/3)
+        # exit()
+
         self.program = {
             "TREE":
                 self.load_program(
                     vertex_shader="./tree.vert",
-                    geometry_shader="./tree_normal.geom",
+                    geometry_shader="./tree.geom",
                     fragment_shader="./tree.frag"),
             "TREE_NORMAL":
                 self.load_program(
@@ -93,6 +98,7 @@ class MyWindow(moderngl_window.WindowConfig):
         self.vao_skeleton = VAO(name="skeleton", mode=moderngl.LINES)
         self.vao_skeleton.buffer(self.buffer_skeleton, '3f', ['in_vert'])
         # --
+
 
 
         ## mesh --
@@ -123,7 +129,7 @@ class MyWindow(moderngl_window.WindowConfig):
         self.init_debug_draw()
 
     # vertex, normals (not indices because normals need duplicated vertex data)
-    def gen_tree_mesh(self, NB=16, branch_thickness=0.1):
+    def gen_tree_mesh(self, NB=3, branch_thickness=0.1):
         data = []
 
         for j, node in enumerate(self.tree.nodes):
@@ -202,7 +208,7 @@ class MyWindow(moderngl_window.WindowConfig):
         self.geometry_program['modelview'].write(modelview)
         self.geometry_program['projection'].write(self.projection)
 
-        # self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
+        self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
         # self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
         # self.program["TREE"]['near'].value = self.camera.near
         # self.program["TREE"]['far'].value = self.camera.far

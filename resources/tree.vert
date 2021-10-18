@@ -5,8 +5,6 @@ uniform mat4 projection;
 
 layout (location = 0) in vec3 in_vert;
 
-out vec3 v_normal;
-
 void main() {
 	vec4 pos = vec4(in_vert, 1.0);
 	gl_Position = pos;

@@ -1,13 +1,12 @@
 #version 430
 
-// in vec3 v_normal;
-// in vec3 FragPos;
+in vec3 g_normal;
 
 out vec4 fragColor;
 
-// uniform vec3 lightPosition;
+uniform vec3 lightPosition;
 // uniform vec2 resolution;
-//
+
 // uniform float near;
 // uniform float far;
 
@@ -39,13 +38,13 @@ out vec4 fragColor;
 // }
 
 void main() {
-    // float intensity = dot(normalize(lightPosition), normalize(v_normal));
-    //
-    // float value = 1.0;
-    // if (intensity > 0.5)
-    //     value = 1.0;
-    // else
-    //     value = 0.4;
+    float intensity = dot(normalize(lightPosition), normalize(g_normal));
+
+    float value = 1.0;
+    if (intensity > 0.5)
+        value = 1.0;
+    else
+        value = 0.4;
 
     // if (intensity > 0.95)
     //     value = 1.0;
@@ -68,6 +67,6 @@ void main() {
     // if (diff > 0.001)
     //     value = 0.0;
 
-    fragColor = vec4(1.0, 0.0, 1.0, 1.0);
+    fragColor = vec4(0.0, value, 0.0, 1.0);
     // fragColor = vec4(0.0, value, 0.0, 1.0);
 }
