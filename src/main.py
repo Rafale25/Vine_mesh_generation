@@ -38,7 +38,6 @@ first pass:
 
 seconde pass:
     add outline to texture using depth and color texture
-
 """
 
 class MyWindow(moderngl_window.WindowConfig):
@@ -66,14 +65,7 @@ class MyWindow(moderngl_window.WindowConfig):
         self.draw_mesh = True
 
         self.camera = Camera()
-
         self.projection = glm.perspective(self.camera.fov, self.wnd.aspect_ratio, self.camera.near, self.camera.far)
-        # self.projection = Projection3D(
-        #     fov=self.camera.fov,
-        #     aspect_ratio=self.wnd.aspect_ratio,
-        #     near=1.0,
-        #     far=100.0,
-        # )
 
         self.tree = Tree()
         self.tree.generate()
@@ -82,6 +74,7 @@ class MyWindow(moderngl_window.WindowConfig):
             "TREE":
                 self.load_program(
                     vertex_shader="./tree.vert",
+                    geometry_shader="./tree_normal.geom",
                     fragment_shader="./tree.frag"),
             "TREE_NORMAL":
                 self.load_program(
@@ -95,27 +88,28 @@ class MyWindow(moderngl_window.WindowConfig):
         }
 
         ## skeleton --
-        self.buffer_debug = self.ctx.buffer(data=array('f', self.gen_tree_skeleton()))
+        self.buffer_skeleton = self.ctx.buffer(data=array('f', self.gen_tree_skeleton()))
 
-        self.vao_lines = VAO(name="skeleton", mode=moderngl.LINES)
-        self.vao_lines.buffer(self.buffer_debug, '3f', ['in_vert'])
+        self.vao_skeleton = VAO(name="skeleton", mode=moderngl.LINES)
+        self.vao_skeleton.buffer(self.buffer_skeleton, '3f', ['in_vert'])
         # --
 
 
         ## mesh --
-        self.buffer_mesh = self.ctx.buffer(data=array('f', self.gen_tree_mesh()))
+        # self.buffer_mesh = self.ctx.buffer(data=array('f', self.gen_tree_mesh()))
 
-        self.vao_mesh = VAO(name="mesh", mode=moderngl.TRIANGLES)
-        self.vao_mesh.buffer(self.buffer_mesh, '3f 3f', ['in_vert', 'in_normal'])
+        # self.vao_mesh = VAO(name="mesh", mode=moderngl.TRIANGLES)
+        # self.vao_mesh.buffer(self.buffer_mesh, '3f 3f', ['in_vert', 'in_normal'])
         # --
 
 
         # depth --
         self.quad_depth = geometry.quad_2d(size=(0.5, 0.5), pos=(0.75, 0.75))
 
-        self.offscreen_depth_texture = self.ctx.depth_texture(self.wnd.buffer_size)
+
+        self.depth_texture = self.ctx.depth_texture(self.wnd.buffer_size)
         self.offscreen = self.ctx.framebuffer(
-            depth_attachment=self.offscreen_depth_texture,
+            depth_attachment=self.depth_texture,
         )
 
         self.geometry_program = self.load_program('geometry.glsl')
@@ -127,19 +121,6 @@ class MyWindow(moderngl_window.WindowConfig):
         # --
 
         self.init_debug_draw()
-
-# """
-# 1 - 3 - 5
-# | \ | \ |
-# 0 - 2 - 4
-#
-# #indices for NB=3 ; GL_TRIANGLES
-# 0 2 1
-# 1 2 3
-#
-# 2 4 3
-# 3 4 5
-# """
 
     # vertex, normals (not indices because normals need duplicated vertex data)
     def gen_tree_mesh(self, NB=16, branch_thickness=0.1):
@@ -221,10 +202,10 @@ class MyWindow(moderngl_window.WindowConfig):
         self.geometry_program['modelview'].write(modelview)
         self.geometry_program['projection'].write(self.projection)
 
-        self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
-        self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
-        self.program["TREE"]['near'].value = self.camera.near
-        self.program["TREE"]['far'].value = self.camera.far
+        # self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
+        # self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
+        # self.program["TREE"]['near'].value = self.camera.near
+        # self.program["TREE"]['far'].value = self.camera.far
 
     def update(self, time_since_start, frametime):
         Light.x = cos(time_since_start*0.2) * 6.0
@@ -253,43 +234,42 @@ class MyWindow(moderngl_window.WindowConfig):
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
 
         ## draw to depth_buffer --
-        self.offscreen.clear()
-        self.offscreen.use()
+        # self.offscreen.clear()
+        # self.offscreen.use()
 
-        self.vao_mesh.render(program=self.geometry_program)
+        # self.vao_mesh.render(program=self.geometry_program)
 
-        self.ctx.screen.use()
+        # self.ctx.screen.use()
 
-        self.offscreen_depth_texture.use(location=0)
+        # self.depth_texture.use(location=0)
         if self.draw_mesh:
-            self.vao_mesh.render(program=self.program["TREE"])
-        if self.draw_normals:
-            self.vao_mesh.render(program=self.program["TREE_NORMAL"])
+            self.vao_skeleton.render(program=self.program["TREE"])
+        # if self.draw_normals:
+            # self.vao_mesh.render(program=self.program["TREE_NORMAL"])
         if self.draw_skeleton:
-            self.vao_lines.render(program=self.program["LINE"])
+            self.vao_skeleton.render(program=self.program["LINE"])
 
-        self.debug_line(0, 0, 0, 0.5, 0, 0)
-        self.debug_line(0, 0, 0, 0, 0.5, 0)
-        self.debug_line(0, 0, 0, 0, 0, 0.5)
-        self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
-        self.debug_draw()
-
+        # self.debug_line(0, 0, 0, 0.5, 0, 0)
+        # self.debug_line(0, 0, 0, 0, 0.5, 0)
+        # self.debug_line(0, 0, 0, 0, 0, 0.5)
+        # self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
+        # self.debug_draw()
 
         ## draw debug depthbuffer --
-        self.ctx.disable(moderngl.DEPTH_TEST)
-        self.quad_depth.render(self.linearize_depth_program)
+        # self.ctx.disable(moderngl.DEPTH_TEST)
+        # self.quad_depth.render(self.linearize_depth_program)
 
         self.imgui_newFrame(frametime)
         self.imgui_render()
 
     def cleanup(self):
         print("Cleaning up ressources.")
-        self.buffer_debug.release()
-        self.buffer_mesh.release()
-        self.offscreen_depth_texture.release()
-        self.offscreen.release()
-        self.geometry_program.release()
-        self.linearize_depth_program.release()
+        # self.buffer_skeleton.release()
+        # self.buffer_mesh.release()
+        # self.depth_texture.release()
+        # self.offscreen.release()
+        # self.geometry_program.release()
+        # self.linearize_depth_program.release()
 
         for str, program in self.program.items():
             program.release()
@@ -321,8 +301,20 @@ class MyWindow(moderngl_window.WindowConfig):
         unicode_char_entered
 
 def main():
-    # sys.setrecursionlimit(10_000)
     MyWindow.run()
 
 if __name__ == "__main__":
     main()
+
+# """
+# 1 - 3 - 5
+# | \ | \ |
+# 0 - 2 - 4
+#
+# #indices for NB=3 ; GL_TRIANGLES
+# 0 2 1
+# 1 2 3
+#
+# 2 4 3
+# 3 4 5
+# """

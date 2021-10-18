@@ -16,9 +16,9 @@ class TreeNode:
 
 class Tree:
     MAX_LEN = 5.0
-    MAX_DEPTH = 1
-    MIN_CHILDS = 1
-    MAX_CHILDS = 1
+    MAX_DEPTH = 4
+    MIN_CHILDS = 2
+    MAX_CHILDS = 2
 
     def __init__(self):
         self.root = TreeNode(parent=None, pos=glm.vec3(0, 0, 0))
