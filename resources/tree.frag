@@ -1,8 +1,11 @@
 #version 430
 
 in vec3 g_normal;
+in vec3 g_pos;
 
-out vec4 fragColor;
+layout(location=0) out vec4 out_depth;
+// layout(location=1) out vec4 out_position;
+// out vec4 fragColor;
 
 uniform vec3 lightPosition;
 // uniform vec2 resolution;
@@ -46,17 +49,6 @@ void main() {
     else
         value = 0.4;
 
-    // if (intensity > 0.95)
-    //     value = 1.0;
-    // else if (intensity > 0.75)
-    //     value = 0.8;
-    // else if (intensity > 0.50)
-    //     value = 0.6;
-    // else if (intensity > 0.25)
-    //     value = 0.4;
-    // else
-    //     value = 0.2;
-
     // vec2 texel = gl_FragCoord.xy / resolution;
     // float z = texture(texture0, texel).r;
     //
@@ -67,6 +59,18 @@ void main() {
     // if (diff > 0.001)
     //     value = 0.0;
 
-    fragColor = vec4(0.0, value, 0.0, 1.0);
-    // fragColor = vec4(0.0, value, 0.0, 1.0);
+    // out_color = vec4(0.0, value, 0.0, 1.0);
+    // out_position = vec4(1.0, 0.0, 0.0, 0.0);
 }
+
+
+// if (intensity > 0.95)
+//     value = 1.0;
+// else if (intensity > 0.75)
+//     value = 0.8;
+// else if (intensity > 0.50)
+//     value = 0.6;
+// else if (intensity > 0.25)
+//     value = 0.4;
+// else
+//     value = 0.2;

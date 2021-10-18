@@ -13,20 +13,71 @@ uniform mat4 projection;
 
 const float branch_thickness = 0.1;
 
+in vec3 v_pos[];
+
+out vec3 g_pos;
 out vec3 g_normal;
 
-mat4 rotation3d(vec3 axis, float angle) {
-    axis = normalize(axis);
-    float s = sin(angle);
-    float c = cos(angle);
-    float oc = 1.0 - c;
-
+mat4 calcRotateMat4X(float radian) {
     return mat4(
-        c * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
-        oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
-        oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
-        0.0,                                0.0,                                0.0,                                1.0
+        1.0, 0.0, 0.0, 0.0,
+        0.0, cos(radian), -sin(radian), 0.0,
+        0.0, sin(radian), cos(radian), 0.0,
+        0.0, 0.0, 0.0, 1.0
     );
+}
+
+mat4 calcRotateMat4Y(float radian) {
+    return mat4(
+        cos(radian), 0.0, sin(radian), 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        -sin(radian), 0.0, cos(radian), 0.0,
+        0.0, 0.0, 0.0, 1.0
+    );
+}
+
+mat4 calcRotateMat4Z(float radian) {
+    return mat4(
+        cos(radian), -sin(radian), 0.0, 0.0,
+        sin(radian), cos(radian), 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+    );
+}
+
+mat4 calcRotateMat4(vec3 radian) {
+    return calcRotateMat4X(radian.x) * calcRotateMat4Y(radian.y) * calcRotateMat4Z(radian.z);
+}
+
+mat4 calcTranslateMat4(vec3 v) {
+    return mat4(
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        v.x, v.y, v.z, 1.0
+    );
+}
+
+// template<typename T, qualifier Q>
+// GLM_FUNC_QUALIFIER mat<4, 4, T, Q> orientation
+// (
+// 	vec<3, T, Q> const& Normal,
+// 	vec<3, T, Q> const& Up
+// )
+// {
+// 	if(all(equal(Normal, Up, epsilon<T>())))
+// 		return mat<4, 4, T, Q>(static_cast<T>(1));
+//
+// 	vec<3, T, Q> RotationAxis = cross(Up, Normal);
+// 	T Angle = acos(dot(Normal, Up));
+//
+// 	return rotate(Angle, RotationAxis);
+// }
+
+mat4 orientation(vec3 dir, vec3 up) {
+    vec3 rotation_axis = cross(up, dir);
+    // float angle = acos(dot(dir, up));
+    return calcRotateMat4(rotation_axis);
 }
 
 vec3 triangle_normal(vec3 p0, vec3 p1, vec3 p2) {
@@ -39,12 +90,12 @@ void main() {
 
     vec3 dir = normalize(node_parent.xyz - node.xyz);
 
-    float pitch = asin(-dir.y);
-    float yaw = atan(dir.x, dir.z);
+    mat4 rot = orientation(dir, vec3(0, 1, 0));
 
-    mat4 rot_y = rotation3d(vec3(0, 1, 0), yaw);
-    mat4 rot_x = rotation3d(vec3(1, 0, 0), pitch);
-    mat4 rot = rot_y * rot_x;
+    mat4 translate_node = calcTranslateMat4(node);
+    mat4 translate_node_parent = calcTranslateMat4(node_parent);
+
+
 
     for (int i = 0 ; i < NB ; ++i) {
         float angle1 = (PI*2.0 / NB) * i;
@@ -56,43 +107,44 @@ void main() {
         float x2 = cos(angle2) * branch_thickness;
         float z2 = sin(angle2) * branch_thickness;
 
-        vec3 p1 = vec3(x1, 0, z1);
-        vec3 p2 = vec3(x2, 0, z2);
+        vec4 p1 = vec4(x1, 0, z1, 1.0);
+        vec4 p2 = vec4(x2, 0, z2, 1.0);
 
         //triangle 1
-        vec3 a0 = (rot * vec4(p1, 1.0)).xyz + node;
-        vec3 a1 = (rot * vec4(p1, 1.0)).xyz + node_parent;
-        vec3 a2 = (rot * vec4(p2, 1.0)).xyz + node;
+        vec4 a0 = translate_node * rot * p1;
+        vec4 a1 = translate_node_parent * rot * p1;
+        vec4 a2 = translate_node * rot * p2;
 
-        vec3 a_normal = -triangle_normal(a0, a1, a2);
+        vec3 a_normal = -triangle_normal(a0.xyz, a1.xyz, a2.xyz);
 
-        gl_Position = projection * modelview * vec4(a0, 1.0);
+        gl_Position = projection * modelview * a0;
         g_normal = a_normal;
         EmitVertex();
-        gl_Position = projection * modelview * vec4(a2, 1.0);
+        gl_Position = projection * modelview * a2;
         g_normal = a_normal;
         EmitVertex();
-        gl_Position = projection * modelview * vec4(a1, 1.0);
+        gl_Position = projection * modelview * a1;
         g_normal = a_normal;
         EmitVertex();
 
         //triangle 2
-        vec3 b1 = (rot * vec4(p1, 1.0)).xyz + node_parent;
-        vec3 b2 = (rot * vec4(p2, 1.0)).xyz + node;
-        vec3 b3 = (rot * vec4(p2, 1.0)).xyz + node_parent;
+        vec4 b1 = translate_node_parent * rot * p1;
+        vec4 b2 = translate_node * rot * p2;
+        vec4 b3 = translate_node_parent * rot * p2;
 
-        vec3 b_normal = triangle_normal(b1, b2, b3);
+        vec3 b_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz);
 
-        gl_Position = projection * modelview * vec4(b1, 1.0);
+        gl_Position = projection * modelview * b1;
         g_normal = b_normal;
         EmitVertex();
-        gl_Position = projection * modelview * vec4(b3, 1.0);
+        gl_Position = projection * modelview * b3;
         g_normal = b_normal;
         EmitVertex();
-        gl_Position = projection * modelview * vec4(b2, 1.0);
+        gl_Position = projection * modelview * b2;
         g_normal = b_normal;
         EmitVertex();
 
+        g_pos = v_pos[i];
 
         EndPrimitive();
     }

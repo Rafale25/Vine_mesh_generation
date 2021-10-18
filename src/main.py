@@ -95,11 +95,9 @@ class MyWindow(moderngl_window.WindowConfig):
         ## skeleton --
         self.buffer_skeleton = self.ctx.buffer(data=array('f', self.gen_tree_skeleton()))
 
-        self.vao_skeleton = VAO(name="skeleton", mode=moderngl.LINES)
-        self.vao_skeleton.buffer(self.buffer_skeleton, '3f', ['in_vert'])
+        self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES)
+        self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
         # --
-
-
 
         ## mesh --
         # self.buffer_mesh = self.ctx.buffer(data=array('f', self.gen_tree_mesh()))
@@ -108,13 +106,15 @@ class MyWindow(moderngl_window.WindowConfig):
         # self.vao_mesh.buffer(self.buffer_mesh, '3f 3f', ['in_vert', 'in_normal'])
         # --
 
-
         # depth --
         self.quad_depth = geometry.quad_2d(size=(0.5, 0.5), pos=(0.75, 0.75))
 
-
+        self.color_texture = self.ctx.texture(self.wnd.buffer_size, 4)
         self.depth_texture = self.ctx.depth_texture(self.wnd.buffer_size)
         self.offscreen = self.ctx.framebuffer(
+            color_attachments=[
+                self.color_texture,
+            ],
             depth_attachment=self.depth_texture,
         )
 
@@ -208,7 +208,7 @@ class MyWindow(moderngl_window.WindowConfig):
         self.geometry_program['modelview'].write(modelview)
         self.geometry_program['projection'].write(self.projection)
 
-        self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
+        # self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
         # self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
         # self.program["TREE"]['near'].value = self.camera.near
         # self.program["TREE"]['far'].value = self.camera.far
@@ -236,34 +236,38 @@ class MyWindow(moderngl_window.WindowConfig):
     def render(self, time_since_start, frametime):
         self.update(time_since_start, frametime)
 
-        self.ctx.clear(0.5, 0.5, 0.5)
+        self.ctx.clear(0.2, 0.2, 0.2)
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
 
         ## draw to depth_buffer --
-        # self.offscreen.clear()
-        # self.offscreen.use()
+        self.offscreen.clear()
+        self.offscreen.use()
 
         # self.vao_mesh.render(program=self.geometry_program)
 
         # self.ctx.screen.use()
 
-        # self.depth_texture.use(location=0)
+        self.depth_texture.use(location=0)
+        self.color_texture.use(location=1)
         if self.draw_mesh:
-            self.vao_skeleton.render(program=self.program["TREE"])
+            self.vao_tree.render(program=self.program["TREE"])
         # if self.draw_normals:
             # self.vao_mesh.render(program=self.program["TREE_NORMAL"])
         if self.draw_skeleton:
-            self.vao_skeleton.render(program=self.program["LINE"])
+            self.vao_tree.render(program=self.program["LINE"])
 
-        self.debug_line(0, 0, 0, 0.5, 0, 0)
-        self.debug_line(0, 0, 0, 0, 0.5, 0)
-        self.debug_line(0, 0, 0, 0, 0, 0.5)
-        self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
-        self.debug_draw()
+        self.ctx.screen.use()
+
+        # self.debug_line(0, 0, 0, 0.5, 0, 0)
+        # self.debug_line(0, 0, 0, 0, 0.5, 0)
+        # self.debug_line(0, 0, 0, 0, 0, 0.5)
+        # self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
+        # self.debug_draw()
 
         ## draw debug depthbuffer --
         # self.ctx.disable(moderngl.DEPTH_TEST)
-        # self.quad_depth.render(self.linearize_depth_program)
+        # self.color_texture.use(location=0)
+        self.quad_depth.render(self.linearize_depth_program)
 
         self.imgui_newFrame(frametime)
         self.imgui_render()
