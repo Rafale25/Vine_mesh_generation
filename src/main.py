@@ -12,8 +12,11 @@ import imgui
 import pyglet
 import glm
 
-import moderngl_window as mglw
+import moderngl_window
 from moderngl_window.integrations.imgui import ModernglWindowRenderer
+from moderngl_window.opengl.projection import Projection3D
+from moderngl_window.opengl.vao import VAO
+from moderngl_window import geometry
 
 from glm import vec3, vec4
 from math import pi, cos, sin, fabs
@@ -25,7 +28,12 @@ from _config import CameraOrbit, Camera, Light
 
 from tree import Tree, TreeNode
 
-class MyWindow(mglw.WindowConfig):
+"""
+render tree depth with only vertices
+
+"""
+
+class MyWindow(moderngl_window.WindowConfig):
     title = "Tree"
     gl_version = (4, 3)
     window_size = (1280, 720)
@@ -51,6 +59,14 @@ class MyWindow(mglw.WindowConfig):
 
         self.camera = Camera()
 
+        self.projection = glm.perspective(self.camera.fov, self.wnd.aspect_ratio, self.camera.near, self.camera.far)
+        # self.projection = Projection3D(
+        #     fov=self.camera.fov,
+        #     aspect_ratio=self.wnd.aspect_ratio,
+        #     near=1.0,
+        #     far=100.0,
+        # )
+
         self.tree = Tree()
         self.tree.generate()
 
@@ -70,59 +86,42 @@ class MyWindow(mglw.WindowConfig):
                     fragment_shader="./line.frag"),
         }
 
-        ## skeleton ----------
+        ## skeleton --
         self.buffer_debug = self.ctx.buffer(data=array('f', self.gen_tree_skeleton()))
 
-        self.vao_lines = self.ctx.vertex_array(
-            self.program["LINE"],
-            [
-                (self.buffer_debug, '3f', 'in_vert'),
-            ],
-        )
-        # -----------------------------
+        self.vao_lines = VAO(name="skeleton", mode=moderngl.LINES)
+        self.vao_lines.buffer(self.buffer_debug, '3f', ['in_vert'])
+        # --
 
-        ## mesh ----------------
+
+        ## mesh --
         data = []
         self.gen_tree_mesh(data)
-
         self.buffer_mesh = self.ctx.buffer(data=array('f', data))
 
-        self.vao_mesh = self.ctx.vertex_array(
-            self.program["TREE"],
-            [
-                (self.buffer_mesh, '3f 3f', 'in_vert', 'in_normal')
-            ],
+        self.vao_mesh = VAO(name="mesh", mode=moderngl.TRIANGLES)
+        self.vao_mesh.buffer(self.buffer_mesh, '3f 3f', ['in_vert', 'in_normal'])
+        # --
+
+
+        # depth --
+        # self.quad_fs = geometry.quad_2d(pos=(0, 0), size=(0.2, 0.2))
+        self.quad_depth = geometry.quad_2d(size=(0.5, 0.5), pos=(0.75, 0.75))
+
+        self.offscreen_depth_texture = self.ctx.depth_texture(self.wnd.buffer_size)
+        self.offscreen = self.ctx.framebuffer(
+            depth_attachment=self.offscreen_depth_texture,
         )
 
-        self.vao_mesh_normal = self.ctx.vertex_array(
-            self.program["TREE_NORMAL"],
-            [
-                (self.buffer_mesh, '3f 3f', 'in_vert', 'in_normal')
-            ],
-        )
+        self.geometry_program = self.load_program('geometry.glsl')
 
-        ## depth texture --
-        # self.quad_2d = mglw.geometry.quad_2d(
-        #     size=self.window_size,
-        #     pos=(self.width/2, self.height/2),
-        #     normals=False)
-        # self.shader_framebuffer = self.load_program(
-        #     vertex_shader="./framebuffer.vert",
-        #     fragment_shader="./framebuffer.frag"
-        # )
-
-        # self.depth_texture = self.ctx.texture(self.wnd.size, 3)
-        # depth_attachment = self.ctx.depth_renderbuffer(self.wnd.size)
-        # self.fbo = self.ctx.framebuffer(self.depth_texture, depth_attachment)
-        # --------
+        self.linearize_depth_program = self.load_program('linearize_depth.glsl')
+        self.linearize_depth_program['texture0'].value = 0
+        self.linearize_depth_program['near'].value = self.camera.near
+        self.linearize_depth_program['far'].value = self.camera.far
+        # --
 
         self.init_debug_draw()
-
-    from _debug_draw import\
-        init_debug_draw,\
-        debug_line,\
-        debug_sphere,\
-        debug_draw
 
 # """
 # 1 - 3 - 5
@@ -202,23 +201,27 @@ class MyWindow(mglw.WindowConfig):
             yield node.parent.pos.z
 
     def update_uniforms(self, frametime):
-        view = self.camera.view_matrix()
+        modelview = self.camera.view_matrix()
 
-        aspect_ratio = self.width / self.height
-        projection = glm.perspective(self.camera.fov, aspect_ratio, 0.1, 1000)
-
-        mvp = projection * view
+        # mvp = self.projection * modelview
         for str, program in self.program.items():
-            if 'mvp' in program:
-                program['mvp'].write(mvp)
+            if 'modelview' in program:
+                program['modelview'].write(modelview)
+            if 'projection' in program:
+                program['projection'].write(self.projection)
 
+        self.geometry_program['modelview'].write(modelview)
+        self.geometry_program['projection'].write(self.projection)
 
         # view_r = glm.transpose(view)
         # view_dir = vec3(view_r[2][0], view_r[2][1], view_r[2][2])
-
         # self.program["TREE"]["view_direction"].write(view_dir)
-        self.program["TREE"]["view_position"].write(self.camera.pos)
+
+        # self.program["TREE"]["view_position"].write(self.camera.pos)
         self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
+        self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
+        self.program["TREE"]['near'].value = self.camera.near
+        self.program["TREE"]['far'].value = self.camera.far
 
     def update(self, time_since_start, frametime):
         Light.x = cos(time_since_start*0.2) * 6.0
@@ -243,31 +246,35 @@ class MyWindow(mglw.WindowConfig):
     def render(self, time_since_start, frametime):
         self.update(time_since_start, frametime)
 
-        # self.fbo.use()
+        self.ctx.clear(0.5, 0.5, 0.5)
+        self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
 
-        self.ctx.clear(0.3, 0.3, 0.3)
-        # self.ctx.enable_only(moderngl.NOTHING)
-        # self.ctx.enable_only(moderngl.PROGRAM_POINT_SIZE)
-        self.ctx.enable_only(
-            moderngl.CULL_FACE * self.cull_face |
-            moderngl.DEPTH_TEST)
+        ## draw to depth_buffer --
+        self.offscreen.clear()
+        self.offscreen.use()
+
+        self.vao_mesh.render(program=self.geometry_program)
+
+        self.ctx.screen.use()
+        # self.ctx.disable(moderngl.DEPTH_TEST)
+
+        ## draw debug depthbuffer --
+        self.offscreen_depth_texture.use(location=0)
+        self.quad_depth.render(self.linearize_depth_program)
 
 
         if self.draw_mesh:
-            self.vao_mesh.render(mode=moderngl.TRIANGLES)
+            self.vao_mesh.render(program=self.program["TREE"])
         if self.draw_normals:
-            self.vao_mesh_normal.render(mode=moderngl.TRIANGLES)
+            self.vao_mesh.render(program=self.program["TREE_NORMAL"])
         if self.draw_skeleton:
-            self.vao_lines.render(mode=moderngl.LINES)
+            self.vao_lines.render(program=self.program["LINE"])
 
         self.debug_line(0, 0, 0, 0.5, 0, 0)
         self.debug_line(0, 0, 0, 0, 0.5, 0)
         self.debug_line(0, 0, 0, 0, 0, 0.5)
         self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
         self.debug_draw()
-
-        # self.depth_texture.use(location=0)
-        # self.quad_2d.render(self.shader_framebuffer)
 
         self.imgui_newFrame(frametime)
         self.imgui_render()
@@ -281,6 +288,13 @@ class MyWindow(mglw.WindowConfig):
 
     def __del__(self):
         self.cleanup()
+
+    # DEBUG
+    from _debug_draw import\
+        init_debug_draw,\
+        debug_line,\
+        debug_sphere,\
+        debug_draw
 
     ## IMGUI
     from _gui import\

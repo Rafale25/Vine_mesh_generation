@@ -18,6 +18,9 @@ class Camera:
     def __init__(self):
         self.pos = glm.vec3(0, 0, -8)
         self.rot = glm.vec3(0, 0, 0)
+
+        self.near = 0.1
+        self.far = 100.0
         self.fov = glm.radians(70)
         self.speed = 0.05
 
