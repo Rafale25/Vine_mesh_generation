@@ -243,7 +243,7 @@ class MyWindow(moderngl_window.WindowConfig):
         self.ctx.clear(0.2, 0.2, 0.2)
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
 
-        # self.regenerate() # for the lol
+        self.regenerate() # for the lol
 
         ## draw to depth_buffer --
         # self.offscreen.clear()
