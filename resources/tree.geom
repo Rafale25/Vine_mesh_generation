@@ -1,6 +1,6 @@
 #version 440
 
-#define NB 16
+#define NB 8
 #define NB_VERTICES (NB * 2 * 3)
 
 layout (lines) in;
@@ -57,22 +57,6 @@ mat4 calcTranslateMat4(vec3 v) {
         v.x, v.y, v.z, 1.0
     );
 }
-
-// template<typename T, qualifier Q>
-// GLM_FUNC_QUALIFIER mat<4, 4, T, Q> orientation
-// (
-// 	vec<3, T, Q> const& Normal,
-// 	vec<3, T, Q> const& Up
-// )
-// {
-// 	if(all(equal(Normal, Up, epsilon<T>())))
-// 		return mat<4, 4, T, Q>(static_cast<T>(1));
-//
-// 	vec<3, T, Q> RotationAxis = cross(Up, Normal);
-// 	T Angle = acos(dot(Normal, Up));
-//
-// 	return rotate(Angle, RotationAxis);
-// }
 
 mat4 orientation(vec3 dir, vec3 up) {
     vec3 rotation_axis = cross(up, dir);

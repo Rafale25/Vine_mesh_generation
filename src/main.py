@@ -93,7 +93,9 @@ class MyWindow(moderngl_window.WindowConfig):
         }
 
         ## skeleton --
-        self.buffer_skeleton = self.ctx.buffer(data=array('f', self.gen_tree_skeleton()))
+        # self.buffer_skeleton = self.ctx.buffer(data=array('f', self.gen_tree_skeleton()))
+        self.buffer_skeleton = self.ctx.buffer(reserve=(32*3)*10000)
+        self.buffer_skeleton.write(array('f', self.gen_tree_skeleton()))
 
         self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES)
         self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
@@ -128,64 +130,6 @@ class MyWindow(moderngl_window.WindowConfig):
 
         self.init_debug_draw()
 
-    # vertex, normals (not indices because normals need duplicated vertex data)
-    def gen_tree_mesh(self, NB=3, branch_thickness=0.1):
-        data = []
-
-        for j, node in enumerate(self.tree.nodes):
-            dir = glm.sub(node.parent.pos, node.pos)
-
-            mat_translate_parent = glm.translate(glm.mat4(), node.parent.pos)
-            mat_translate_self = glm.translate(glm.mat4(), node.pos)
-            mat_rotate = glm.orientation(dir, vec3(0,1,0))
-
-            for i in range(NB):
-                angle1 = (math.pi*2.0 / NB) * i
-                angle2 = (math.pi*2.0 / NB) * (i + 1)
-
-                x1 = cos(angle1) * branch_thickness
-                z1 = sin(angle1) * branch_thickness
-
-                x2 = cos(angle2) * branch_thickness
-                z2 = sin(angle2) * branch_thickness
-
-                p1 = vec4(x1, 0, z1, 1.0)
-                p2 = vec4(x2, 0, z2, 1.0)
-
-                # triangle 1
-                a0 = mat_translate_self * mat_rotate * p1
-                a1 = mat_translate_parent * mat_rotate * p1
-                a2 = mat_translate_self * mat_rotate * p2
-
-                a_normal = triangle_normal(a0.xyz, a1.xyz, a2.xyz)
-
-                data.extend(a0.xyz)
-                data.extend(a_normal) # one for each of the 3 vertices
-
-                data.extend(a1.xyz)
-                data.extend(a_normal)
-
-                data.extend(a2.xyz)
-                data.extend(a_normal)
-
-                # triangle 2
-                b1 = mat_translate_parent * mat_rotate * p1
-                b3 = mat_translate_self * mat_rotate * p2
-                b2 = mat_translate_parent * mat_rotate * p2
-
-                b_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz)
-
-                data.extend(b1.xyz)
-                data.extend(b_normal)
-
-                data.extend(b2.xyz)
-                data.extend(b_normal)
-
-                data.extend(b3.xyz)
-                data.extend(b_normal)
-
-        return data
-
     def gen_tree_skeleton(self):
         for node in self.tree.nodes:
             yield node.pos.x
@@ -198,7 +142,11 @@ class MyWindow(moderngl_window.WindowConfig):
 
     def regenerate(self):
         self.tree.generate()
-        self.buffer_skeleton.write(array('f', self.gen_tree_skeleton()))
+
+        # self.buffer_skeleton.orphan(self.tree.size() * (32*3))
+        data = array('f', self.gen_tree_skeleton())
+        self.buffer_skeleton.clear()
+        self.buffer_skeleton.write(data)
 
     def update_uniforms(self, frametime):
         modelview = self.camera.view_matrix()
@@ -263,11 +211,11 @@ class MyWindow(moderngl_window.WindowConfig):
 
         self.ctx.screen.use()
 
-        # self.debug_line(0, 0, 0, 0.5, 0, 0)
-        # self.debug_line(0, 0, 0, 0, 0.5, 0)
-        # self.debug_line(0, 0, 0, 0, 0, 0.5)
-        # self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
-        # self.debug_draw()
+        self.debug_line(0, 0, 0, 0.5, 0, 0)
+        self.debug_line(0, 0, 0, 0, 0.5, 0)
+        self.debug_line(0, 0, 0, 0, 0, 0.5)
+        self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
+        self.debug_draw()
 
         ## draw debug depthbuffer --
         # self.ctx.disable(moderngl.DEPTH_TEST)
@@ -333,3 +281,61 @@ if __name__ == "__main__":
 # 2 4 3
 # 3 4 5
 # """
+
+# # vertex, normals (not indices because normals need duplicated vertex data)
+# def gen_tree_mesh(self, NB=8, branch_thickness=0.1):
+#     data = []
+#
+#     for j, node in enumerate(self.tree.nodes):
+#         dir = glm.sub(node.parent.pos, node.pos)
+#
+#         mat_translate_parent = glm.translate(glm.mat4(), node.parent.pos)
+#         mat_translate_self = glm.translate(glm.mat4(), node.pos)
+#         mat_rotate = glm.orientation(dir, vec3(0,1,0))
+#
+#         for i in range(NB):
+#             angle1 = (math.pi*2.0 / NB) * i
+#             angle2 = (math.pi*2.0 / NB) * (i + 1)
+#
+#             x1 = cos(angle1) * branch_thickness
+#             z1 = sin(angle1) * branch_thickness
+#
+#             x2 = cos(angle2) * branch_thickness
+#             z2 = sin(angle2) * branch_thickness
+#
+#             p1 = vec4(x1, 0, z1, 1.0)
+#             p2 = vec4(x2, 0, z2, 1.0)
+#
+#             # triangle 1
+#             a0 = mat_translate_self * mat_rotate * p1
+#             a1 = mat_translate_parent * mat_rotate * p1
+#             a2 = mat_translate_self * mat_rotate * p2
+#
+#             a_normal = triangle_normal(a0.xyz, a1.xyz, a2.xyz)
+#
+#             data.extend(a0.xyz)
+#             data.extend(a_normal) # one for each of the 3 vertices
+#
+#             data.extend(a1.xyz)
+#             data.extend(a_normal)
+#
+#             data.extend(a2.xyz)
+#             data.extend(a_normal)
+#
+#             # triangle 2
+#             b1 = mat_translate_parent * mat_rotate * p1
+#             b3 = mat_translate_self * mat_rotate * p2
+#             b2 = mat_translate_parent * mat_rotate * p2
+#
+#             b_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz)
+#
+#             data.extend(b1.xyz)
+#             data.extend(b_normal)
+#
+#             data.extend(b2.xyz)
+#             data.extend(b_normal)
+#
+#             data.extend(b3.xyz)
+#             data.extend(b_normal)
+#
+#     return data
