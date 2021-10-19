@@ -57,7 +57,6 @@ mat4 calcTranslateMat4(vec3 v) {
 
 mat4 orientation(vec3 dir, vec3 up) {
     vec3 rotation_axis = cross(up, dir);
-    // float angle = acos(dot(dir, up));
     return calcRotateMat4(rotation_axis);
 }
 
@@ -75,8 +74,6 @@ void main() {
 
     mat4 translate_node = calcTranslateMat4(node);
     mat4 translate_node_parent = calcTranslateMat4(node_parent);
-
-
 
     for (int i = 0 ; i < NB ; ++i) {
         float angle1 = (PI*2.0 / NB) * i;
@@ -128,67 +125,3 @@ void main() {
         EndPrimitive();
     }
 }
-
-// for j, node in enumerate(self.tree.nodes):
-//     dir = glm.sub(node.parent.pos, node.pos)
-//
-//     mat_translate_parent = glm.translate(glm.mat4(), node.parent.pos)
-//     mat_translate_self = glm.translate(glm.mat4(), node.pos)
-//     mat_rotate = glm.orientation(dir, vec3(0,1,0))
-//
-//     for i in range(NB):
-//         angle1 = (PI*2.0 / NB) * i
-//         angle2 = (PI*2.0 / NB) * (i + 1)
-//
-//         x1 = cos(angle1) * branch_thickness
-//         z1 = sin(angle1) * branch_thickness
-//
-//         x2 = cos(angle2) * branch_thickness
-//         z2 = sin(angle2) * branch_thickness
-//
-//         p1 = vec4(x1, 0, z1, 1.0)
-//         p2 = vec4(x2, 0, z2, 1.0)
-//
-//         # triangle 1
-//         a0 = mat_translate_self * mat_rotate * p1
-//         a1 = mat_translate_parent * mat_rotate * p1
-//         a2 = mat_translate_self * mat_rotate * p2
-//
-//         a_normal = triangle_normal(a0.xyz, a1.xyz, a2.xyz)
-//
-//         data.extend(a0.xyz)
-//         data.extend(a_normal) # one for each of the 3 vertices
-//
-//         data.extend(a1.xyz)
-//         data.extend(a_normal)
-//
-//         data.extend(a2.xyz)
-//         data.extend(a_normal)
-//
-//         # triangle 2
-//         b1 = mat_translate_parent * mat_rotate * p1
-//         b3 = mat_translate_self * mat_rotate * p2
-//         b2 = mat_translate_parent * mat_rotate * p2
-//
-//         b_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz)
-//
-//         data.extend(b1.xyz)
-//         data.extend(b_normal)
-//
-//         data.extend(b2.xyz)
-//         data.extend(b_normal)
-//
-//         data.extend(b3.xyz)
-//         data.extend(b_normal)
-
-// for (int i = 0 ; i < 3 ; ++i) {
-//     vec4 v0 = gl_in[i].gl_Position;
-//     gl_Position = projection * modelview * v0;
-//     EmitVertex();
-//
-//     vec4 v1 = v0 + vec4(v_normal[i] * normal_scale, 0);
-//     gl_Position = projection * modelview * v1;
-//     EmitVertex();
-//
-//     EndPrimitive();
-// }

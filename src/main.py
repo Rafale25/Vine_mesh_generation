@@ -41,13 +41,13 @@ seconde pass:
 """
 
 class MyWindow(moderngl_window.WindowConfig):
-    title = "Tree"
+    title = 'Tree'
     gl_version = (4, 3)
     window_size = (1280, 720)
     fullscreen = False
     resizable = False
     vsync = True
-    resource_dir = "./resources"
+    resource_dir = './resources'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -70,38 +70,36 @@ class MyWindow(moderngl_window.WindowConfig):
         self.tree = Tree()
         self.tree.generate()
 
-        # d = self.gen_tree_mesh()
-        # print(d)
-        # print((len(d) / 2)/3)
-        # exit()
-
         self.program = {
-            "TREE":
+            'TREE':
                 self.load_program(
-                    vertex_shader="./tree.vert",
-                    geometry_shader="./tree.geom",
-                    fragment_shader="./tree.frag"),
-            "TREE_NORMAL":
+                    vertex_shader='./tree.vert',
+                    geometry_shader='./tree.geom',
+                    fragment_shader='./tree.frag'),
+            'TREE_NORMAL':
                 self.load_program(
-                    vertex_shader="./tree_normal.vert",
-                    fragment_shader="./tree_normal.frag",
-                    geometry_shader="./tree_normal.geom"),
-            "LINE":
+                    vertex_shader='./tree_normal.vert',
+                    fragment_shader='./tree_normal.frag',
+                    geometry_shader='./tree_normal.geom'),
+            'LINE':
                 self.load_program(
-                    vertex_shader="./line.vert",
-                    fragment_shader="./line.frag"),
-            "FRAMEBUFFER":
+                    vertex_shader='./line.vert',
+                    fragment_shader='./line.frag'),
+            'FRAMEBUFFER':
                 self.load_program(
-                    vertex_shader="./framebuffer.vert",
-                    fragment_shader="./framebuffer.frag"),
-            # "GEOMETRY":
-            #     self.load_program('geometry.glsl'),
+                    vertex_shader='./framebuffer.vert',
+                    fragment_shader='./framebuffer.frag'),
+            'TREE_OUTLINE':
+                self.load_program(
+                    vertex_shader='./tree_outline.vert',
+                    fragment_shader='./tree_outline.frag'),
+            'LINEARIZE_DEPTH':
+                self.load_program('./linearize_depth.glsl'),
         }
 
         ## skeleton --
-        # self.buffer_skeleton = self.ctx.buffer(data=array('f', self.gen_tree_skeleton()))
         self.buffer_skeleton = self.ctx.buffer(reserve=(32*3)*10000)
-        self.buffer_skeleton.write(array('f', self.gen_tree_skeleton()))
+        self.regenerate()
 
         self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES)
         self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
@@ -109,12 +107,12 @@ class MyWindow(moderngl_window.WindowConfig):
 
         ## mesh --
         # self.buffer_mesh = self.ctx.buffer(data=array('f', self.gen_tree_mesh()))
-
         # self.vao_mesh = VAO(name="mesh", mode=moderngl.TRIANGLES)
         # self.vao_mesh.buffer(self.buffer_mesh, '3f 3f', ['in_vert', 'in_normal'])
         # --
 
         # depth --
+        self.quad_screen = geometry.quad_fs()
         self.quad_color = geometry.quad_2d(size=(0.5, 0.5), pos=(0.25, 0.75))
         self.quad_depth = geometry.quad_2d(size=(0.5, 0.5), pos=(0.75, 0.75))
 
@@ -127,10 +125,10 @@ class MyWindow(moderngl_window.WindowConfig):
             depth_attachment=self.depth_texture,
         )
 
-        self.linearize_depth_program = self.load_program('linearize_depth.glsl')
-        self.linearize_depth_program['texture0'].value = 0
-        self.linearize_depth_program['near'].value = self.camera.near
-        self.linearize_depth_program['far'].value = self.camera.far
+        # self.linearize_depth_program = self.load_program('linearize_depth.glsl')
+        # self.linearize_depth_program['texture0'].value = 0
+        # self.linearize_depth_program['near'].value = self.camera.near
+        # self.linearize_depth_program['far'].value = self.camera.far
 
         self.depth_sampler = self.ctx.sampler(
             filter=(moderngl.LINEAR, moderngl.LINEAR),
@@ -168,9 +166,16 @@ class MyWindow(moderngl_window.WindowConfig):
                 program['projection'].write(self.projection)
 
         self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
-        # self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
-        # self.program["TREE"]['near'].value = self.camera.near
-        # self.program["TREE"]['far'].value = self.camera.far
+
+        self.program['TREE_OUTLINE']['texture0'].value = 0
+        self.program['TREE_OUTLINE']['texture1'].value = 1
+        self.program['TREE_OUTLINE']['resolution'].write(glm.vec2(self.width, self.height))
+        self.program['TREE_OUTLINE']['near'].value = self.camera.near
+        self.program['TREE_OUTLINE']['far'].value = self.camera.far
+
+        self.program['LINEARIZE_DEPTH']['texture0'].value = 0
+        self.program['LINEARIZE_DEPTH']['near'].value = self.camera.near
+        self.program['LINEARIZE_DEPTH']['far'].value = self.camera.far
 
     def update(self, time_since_start, frametime):
         Light.x = cos(time_since_start*0.2) * 6.0
@@ -195,25 +200,25 @@ class MyWindow(moderngl_window.WindowConfig):
     def render(self, time_since_start, frametime):
         self.update(time_since_start, frametime)
 
-        self.ctx.clear(0.2, 0.2, 0.2)
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
 
         ## draw to depth_buffer --
-        self.offscreen.clear()
+        self.offscreen.clear(0.2, 0.2, 0.2)
         self.offscreen.use()
 
         self.color_texture.use(location=0)
         if self.draw_mesh:
-            self.depth_sampler.use(location=0)  # temp override the parameters
-            self.vao_tree.render(program=self.program["TREE"])
-            self.depth_sampler.clear(location=0)  # Remove the override
+            # self.depth_sampler.use(location=0)  # temp override the parameters
+            self.vao_tree.render(program=self.program['TREE'])
+            # self.depth_sampler.clear(location=0)  # Remove the override
 
         if self.draw_skeleton:
-            self.vao_tree.render(program=self.program["LINE"])
+            self.vao_tree.render(program=self.program['LINE'])
         # if self.draw_normals:
-        # self.vao_mesh.render(program=self.program["TREE_NORMAL"])
+        # self.vao_mesh.render(program=self.program['TREE_NORMAL'])
 
         self.ctx.screen.use()
+        self.ctx.clear(0.0, 0.0, 0.0)
 
         self.debug_line(0, 0, 0, 0.5, 0, 0)
         self.debug_line(0, 0, 0, 0, 0.5, 0)
@@ -221,22 +226,29 @@ class MyWindow(moderngl_window.WindowConfig):
         self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
         self.debug_draw()
 
-        ## draw debug depthbuffer --
+        self.color_texture.use(location=0)
+        self.depth_texture.use(location=1)
+
+        # self.depth_sampler.use(location=1)  # temp override the parameters
+        self.quad_screen.render(self.program['TREE_OUTLINE'])
+        # self.depth_sampler.clear(location=1)  # Remove the override
+
+        ## draw debug textures--
         self.ctx.disable(moderngl.DEPTH_TEST)
 
         self.color_texture.use(location=0)
-        self.quad_color.render(self.program["FRAMEBUFFER"])
+        self.quad_color.render(self.program['FRAMEBUFFER'])
 
         self.depth_texture.use(location=0)
         self.depth_sampler.use(location=0)  # temp override the parameters
-        self.quad_depth.render(self.linearize_depth_program)
+        self.quad_depth.render(self.program['LINEARIZE_DEPTH'])
         self.depth_sampler.clear(location=0)  # Remove the override
 
         self.imgui_newFrame(frametime)
         self.imgui_render()
 
     def cleanup(self):
-        print("Cleaning up ressources.")
+        print('Cleaning up ressources.')
         self.vao_tree.release()
 
         # self.buffer_skeleton.release()
