@@ -13,9 +13,6 @@ uniform mat4 projection;
 
 const float branch_thickness = 0.1;
 
-// in vec3 v_pos[];
-
-// out vec3 g_position;
 out vec3 g_normal;
 
 mat4 calcRotateMat4X(float radian) {
@@ -127,9 +124,6 @@ void main() {
         gl_Position = projection * modelview * b2;
         g_normal = b_normal;
         EmitVertex();
-
-        // g_position = (modelview * vec4(v_pos[i], 1.0)).xyz;
-        // g_pos = v_pos[i];
 
         EndPrimitive();
     }

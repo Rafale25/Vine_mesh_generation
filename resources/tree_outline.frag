@@ -14,7 +14,8 @@ uniform vec3 lightPosition;
 // uniform float far;
 
 // depth texture
-// uniform sampler2D texture0;
+// uniform sampler2D texture0; #color
+// uniform sampler2D texture1; #depth
 
 // float linear_depth(float z) {
 //     return (2.0 * near) / (far + near - z * (far - near));
