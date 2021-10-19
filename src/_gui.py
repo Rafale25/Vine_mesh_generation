@@ -13,6 +13,8 @@ def imgui_newFrame(self, frametime):
     c, self.draw_skeleton = imgui.checkbox("skeleton", self.draw_skeleton)
     c, self.draw_normals = imgui.checkbox("normals", self.draw_normals)
 
+    if imgui.button("regenerate"):
+        self.regenerate()
 
     imgui.end()
 

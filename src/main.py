@@ -196,6 +196,10 @@ class MyWindow(moderngl_window.WindowConfig):
             yield node.parent.pos.y
             yield node.parent.pos.z
 
+    def regenerate(self):
+        self.tree.generate()
+        self.buffer_skeleton.write(array('f', self.gen_tree_skeleton()))
+
     def update_uniforms(self, frametime):
         modelview = self.camera.view_matrix()
 
@@ -208,7 +212,7 @@ class MyWindow(moderngl_window.WindowConfig):
         self.geometry_program['modelview'].write(modelview)
         self.geometry_program['projection'].write(self.projection)
 
-        # self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
+        self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
         # self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
         # self.program["TREE"]['near'].value = self.camera.near
         # self.program["TREE"]['far'].value = self.camera.far
@@ -239,16 +243,17 @@ class MyWindow(moderngl_window.WindowConfig):
         self.ctx.clear(0.2, 0.2, 0.2)
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
 
+        # self.regenerate() # for the lol
+
         ## draw to depth_buffer --
-        self.offscreen.clear()
-        self.offscreen.use()
+        # self.offscreen.clear()
+        # self.offscreen.use()
 
         # self.vao_mesh.render(program=self.geometry_program)
-
         # self.ctx.screen.use()
 
-        self.depth_texture.use(location=0)
-        self.color_texture.use(location=1)
+        # self.depth_texture.use(location=0) #location doesn't seem to matter
+        # self.color_texture.use(location=1)
         if self.draw_mesh:
             self.vao_tree.render(program=self.program["TREE"])
         # if self.draw_normals:

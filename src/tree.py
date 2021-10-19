@@ -16,7 +16,7 @@ class TreeNode:
 
 class Tree:
     MAX_LEN = 5.0
-    MAX_DEPTH = 3
+    MAX_DEPTH = 10
     MIN_CHILDS = 2
     MAX_CHILDS = 2
 
@@ -43,5 +43,10 @@ class Tree:
     def size(self):
         return len(self.nodes)
 
+    def clear(self):
+        self.root = TreeNode(parent=None, pos=glm.vec3(0, 0, 0))
+        self.nodes = [] #[TreeNode]
+
     def generate(self):
+        self.clear()
         self._generate(parent=self.root, n=Tree.MAX_DEPTH)
