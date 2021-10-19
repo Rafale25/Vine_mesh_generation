@@ -109,23 +109,23 @@ class MyWindow(moderngl_window.WindowConfig):
         # --
 
         # depth --
-        self.quad_depth = geometry.quad_2d(size=(0.5, 0.5), pos=(0.75, 0.75))
+        # self.quad_depth = geometry.quad_2d(size=(0.5, 0.5), pos=(0.75, 0.75))
+        #
+        # self.color_texture = self.ctx.texture(self.wnd.buffer_size, 4)
+        # self.depth_texture = self.ctx.depth_texture(self.wnd.buffer_size)
+        # self.offscreen = self.ctx.framebuffer(
+        #     color_attachments=[
+        #         self.color_texture,
+        #     ],
+        #     depth_attachment=self.depth_texture,
+        # )
 
-        self.color_texture = self.ctx.texture(self.wnd.buffer_size, 4)
-        self.depth_texture = self.ctx.depth_texture(self.wnd.buffer_size)
-        self.offscreen = self.ctx.framebuffer(
-            color_attachments=[
-                self.color_texture,
-            ],
-            depth_attachment=self.depth_texture,
-        )
+        # self.geometry_program = self.load_program('geometry.glsl')
 
-        self.geometry_program = self.load_program('geometry.glsl')
-
-        self.linearize_depth_program = self.load_program('linearize_depth.glsl')
-        self.linearize_depth_program['texture0'].value = 0
-        self.linearize_depth_program['near'].value = self.camera.near
-        self.linearize_depth_program['far'].value = self.camera.far
+        # self.linearize_depth_program = self.load_program('linearize_depth.glsl')
+        # self.linearize_depth_program['texture0'].value = 0
+        # self.linearize_depth_program['near'].value = self.camera.near
+        # self.linearize_depth_program['far'].value = self.camera.far
         # --
 
         self.init_debug_draw()
@@ -157,8 +157,8 @@ class MyWindow(moderngl_window.WindowConfig):
             if 'projection' in program:
                 program['projection'].write(self.projection)
 
-        self.geometry_program['modelview'].write(modelview)
-        self.geometry_program['projection'].write(self.projection)
+        # self.geometry_program['modelview'].write(modelview)
+        # self.geometry_program['projection'].write(self.projection)
 
         self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
         # self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
@@ -209,7 +209,7 @@ class MyWindow(moderngl_window.WindowConfig):
         if self.draw_skeleton:
             self.vao_tree.render(program=self.program["LINE"])
 
-        self.ctx.screen.use()
+        # self.ctx.screen.use()
 
         self.debug_line(0, 0, 0, 0.5, 0, 0)
         self.debug_line(0, 0, 0, 0, 0.5, 0)
@@ -220,13 +220,15 @@ class MyWindow(moderngl_window.WindowConfig):
         ## draw debug depthbuffer --
         # self.ctx.disable(moderngl.DEPTH_TEST)
         # self.color_texture.use(location=0)
-        self.quad_depth.render(self.linearize_depth_program)
+        # self.quad_depth.render(self.linearize_depth_program)
 
         self.imgui_newFrame(frametime)
         self.imgui_render()
 
     def cleanup(self):
         print("Cleaning up ressources.")
+        self.vao_tree.release()
+
         # self.buffer_skeleton.release()
         # self.buffer_mesh.release()
         # self.depth_texture.release()
