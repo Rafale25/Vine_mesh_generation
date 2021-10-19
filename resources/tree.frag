@@ -1,9 +1,9 @@
 #version 430
 
+in vec3 g_position;
 in vec3 g_normal;
-in vec3 g_pos;
 
-// layout(location=0) out vec4 out_depth;
+// layout(location=0) out vec3 out_depth;
 // layout(location=1) out vec4 out_color;
 out vec4 fragColor;
 
@@ -59,8 +59,8 @@ void main() {
     // if (diff > 0.001)
     //     value = 0.0;
 
+    // out_depth = g_position;
     fragColor = vec4(0.0, value, 0.0, 1.0);
-    // out_position = vec4(1.0, 0.0, 0.0, 0.0);
 }
 
 

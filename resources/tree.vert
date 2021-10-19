@@ -10,5 +10,5 @@ out vec3 v_pos;
 void main() {
     vec4 pos = vec4(in_vert, 1.0);
     gl_Position = pos;
-    v_pos = (modelview * pos).xyz;
+    // v_pos = (modelview * pos).xyz;
 }

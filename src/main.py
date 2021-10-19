@@ -90,6 +90,12 @@ class MyWindow(moderngl_window.WindowConfig):
                 self.load_program(
                     vertex_shader="./line.vert",
                     fragment_shader="./line.frag"),
+            "FRAMEBUFFER":
+                self.load_program(
+                    vertex_shader="./framebuffer.vert",
+                    fragment_shader="./framebuffer.frag"),
+            # "GEOMETRY":
+            #     self.load_program('geometry.glsl'),
         }
 
         ## skeleton --
@@ -109,23 +115,27 @@ class MyWindow(moderngl_window.WindowConfig):
         # --
 
         # depth --
-        # self.quad_depth = geometry.quad_2d(size=(0.5, 0.5), pos=(0.75, 0.75))
-        #
-        # self.color_texture = self.ctx.texture(self.wnd.buffer_size, 4)
-        # self.depth_texture = self.ctx.depth_texture(self.wnd.buffer_size)
-        # self.offscreen = self.ctx.framebuffer(
-        #     color_attachments=[
-        #         self.color_texture,
-        #     ],
-        #     depth_attachment=self.depth_texture,
-        # )
+        self.quad_color = geometry.quad_2d(size=(0.5, 0.5), pos=(0.25, 0.75))
+        self.quad_depth = geometry.quad_2d(size=(0.5, 0.5), pos=(0.75, 0.75))
 
-        # self.geometry_program = self.load_program('geometry.glsl')
+        self.color_texture = self.ctx.texture(self.wnd.buffer_size, 4)
+        self.depth_texture = self.ctx.depth_texture(self.wnd.buffer_size)
+        self.offscreen = self.ctx.framebuffer(
+            color_attachments=[
+                self.color_texture,
+            ],
+            depth_attachment=self.depth_texture,
+        )
 
-        # self.linearize_depth_program = self.load_program('linearize_depth.glsl')
-        # self.linearize_depth_program['texture0'].value = 0
-        # self.linearize_depth_program['near'].value = self.camera.near
-        # self.linearize_depth_program['far'].value = self.camera.far
+        self.linearize_depth_program = self.load_program('linearize_depth.glsl')
+        self.linearize_depth_program['texture0'].value = 0
+        self.linearize_depth_program['near'].value = self.camera.near
+        self.linearize_depth_program['far'].value = self.camera.far
+
+        self.depth_sampler = self.ctx.sampler(
+            filter=(moderngl.LINEAR, moderngl.LINEAR),
+            compare_func='',
+        )
         # --
 
         self.init_debug_draw()
@@ -147,6 +157,8 @@ class MyWindow(moderngl_window.WindowConfig):
         data = array('f', self.gen_tree_skeleton())
         self.buffer_skeleton.clear()
         self.buffer_skeleton.write(data)
+
+        # self.vao_tree._buffers[-1].write(data)
 
     def update_uniforms(self, frametime):
         modelview = self.camera.view_matrix()
@@ -191,17 +203,17 @@ class MyWindow(moderngl_window.WindowConfig):
         self.ctx.clear(0.2, 0.2, 0.2)
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
 
-        self.regenerate() # for the lol
 
         ## draw to depth_buffer --
-        # self.offscreen.clear()
-        # self.offscreen.use()
+        self.offscreen.clear()
+        self.offscreen.use()
 
         # self.vao_mesh.render(program=self.geometry_program)
         # self.ctx.screen.use()
 
-        # self.depth_texture.use(location=0) #location doesn't seem to matter
-        # self.color_texture.use(location=1)
+        # self.color_texture.use(location=0)
+        self.depth_texture.use(location=0) #location doesn't seem to matter
+
         if self.draw_mesh:
             self.vao_tree.render(program=self.program["TREE"])
         # if self.draw_normals:
@@ -209,7 +221,7 @@ class MyWindow(moderngl_window.WindowConfig):
         if self.draw_skeleton:
             self.vao_tree.render(program=self.program["LINE"])
 
-        # self.ctx.screen.use()
+        self.ctx.screen.use()
 
         self.debug_line(0, 0, 0, 0.5, 0, 0)
         self.debug_line(0, 0, 0, 0, 0.5, 0)
@@ -218,9 +230,13 @@ class MyWindow(moderngl_window.WindowConfig):
         self.debug_draw()
 
         ## draw debug depthbuffer --
-        # self.ctx.disable(moderngl.DEPTH_TEST)
-        # self.color_texture.use(location=0)
-        # self.quad_depth.render(self.linearize_depth_program)
+        self.ctx.disable(moderngl.DEPTH_TEST)
+
+        self.quad_color.render(self.program["FRAMEBUFFER"])
+
+        self.depth_sampler.use(location=0)  # temp override the parameters
+        self.quad_depth.render(self.linearize_depth_program)
+        self.depth_sampler.clear(location=0)  # Remove the override
 
         self.imgui_newFrame(frametime)
         self.imgui_render()
