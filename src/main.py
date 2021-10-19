@@ -113,22 +113,20 @@ class MyWindow(moderngl_window.WindowConfig):
 
         # depth --
         self.quad_screen = geometry.quad_fs()
+        self.quad_branch_color = geometry.quad_2d(size=(0.5, 0.5), pos=(-0.25, 0.75))
         self.quad_color = geometry.quad_2d(size=(0.5, 0.5), pos=(0.25, 0.75))
         self.quad_depth = geometry.quad_2d(size=(0.5, 0.5), pos=(0.75, 0.75))
 
         self.color_texture = self.ctx.texture(self.wnd.buffer_size, 4)
+        self.branch_color_texture = self.ctx.texture(self.wnd.buffer_size, 4)
         self.depth_texture = self.ctx.depth_texture(self.wnd.buffer_size)
         self.offscreen = self.ctx.framebuffer(
             color_attachments=[
                 self.color_texture,
+                self.branch_color_texture,
             ],
             depth_attachment=self.depth_texture,
         )
-
-        # self.linearize_depth_program = self.load_program('linearize_depth.glsl')
-        # self.linearize_depth_program['texture0'].value = 0
-        # self.linearize_depth_program['near'].value = self.camera.near
-        # self.linearize_depth_program['far'].value = self.camera.far
 
         self.depth_sampler = self.ctx.sampler(
             filter=(moderngl.LINEAR, moderngl.LINEAR),
@@ -168,10 +166,11 @@ class MyWindow(moderngl_window.WindowConfig):
         self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
 
         self.program['TREE_OUTLINE']['texture0'].value = 0
-        self.program['TREE_OUTLINE']['texture1'].value = 1
+        # self.program['TREE_OUTLINE']['texture1'].value = 1
+        self.program['TREE_OUTLINE']['texture2'].value = 2
         self.program['TREE_OUTLINE']['resolution'].write(glm.vec2(self.width, self.height))
-        self.program['TREE_OUTLINE']['near'].value = self.camera.near
-        self.program['TREE_OUTLINE']['far'].value = self.camera.far
+        # self.program['TREE_OUTLINE']['near'].value = self.camera.near
+        # self.program['TREE_OUTLINE']['far'].value = self.camera.far
 
         self.program['LINEARIZE_DEPTH']['texture0'].value = 0
         self.program['LINEARIZE_DEPTH']['near'].value = self.camera.near
@@ -202,47 +201,47 @@ class MyWindow(moderngl_window.WindowConfig):
 
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
 
-        ## draw to depth_buffer --
         self.offscreen.clear(0.2, 0.2, 0.2)
         self.offscreen.use()
 
-        self.color_texture.use(location=0)
         if self.draw_mesh:
-            # self.depth_sampler.use(location=0)  # temp override the parameters
             self.vao_tree.render(program=self.program['TREE'])
-            # self.depth_sampler.clear(location=0)  # Remove the override
-
         if self.draw_skeleton:
             self.vao_tree.render(program=self.program['LINE'])
         # if self.draw_normals:
         # self.vao_mesh.render(program=self.program['TREE_NORMAL'])
 
         self.ctx.screen.use()
-        self.ctx.clear(0.0, 0.0, 0.0)
+        # self.ctx.clear(0.0, 0.0, 0.0)
 
+        self.color_texture.use(location=0)
+        self.depth_texture.use(location=1)
+        self.branch_color_texture.use(location=2)
+
+        # self.depth_sampler.use(location=1)  # temp override the parameters
+        self.quad_screen.render(self.program['TREE_OUTLINE'])
+        # self.depth_sampler.clear(location=1)  # Remove the override
+
+        # problem, the previous texture depth are problematic
         self.debug_line(0, 0, 0, 0.5, 0, 0)
         self.debug_line(0, 0, 0, 0, 0.5, 0)
         self.debug_line(0, 0, 0, 0, 0, 0.5)
         self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
         self.debug_draw()
 
-        self.color_texture.use(location=0)
-        self.depth_texture.use(location=1)
-
-        # self.depth_sampler.use(location=1)  # temp override the parameters
-        self.quad_screen.render(self.program['TREE_OUTLINE'])
-        # self.depth_sampler.clear(location=1)  # Remove the override
-
         ## draw debug textures--
         self.ctx.disable(moderngl.DEPTH_TEST)
+
+        self.branch_color_texture.use(location=0)
+        self.quad_branch_color.render(self.program['FRAMEBUFFER'])
 
         self.color_texture.use(location=0)
         self.quad_color.render(self.program['FRAMEBUFFER'])
 
         self.depth_texture.use(location=0)
-        self.depth_sampler.use(location=0)  # temp override the parameters
+        # self.depth_sampler.use(location=0)  # temp override the parameters
         self.quad_depth.render(self.program['LINEARIZE_DEPTH'])
-        self.depth_sampler.clear(location=0)  # Remove the override
+        # self.depth_sampler.clear(location=0)  # Remove the override
 
         self.imgui_newFrame(frametime)
         self.imgui_render()

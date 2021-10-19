@@ -14,6 +14,7 @@ uniform mat4 projection;
 const float branch_thickness = 0.1;
 
 out vec3 g_normal;
+out vec3 g_branch_color;
 
 mat4 calcRotateMat4X(float radian) {
     return mat4(
@@ -64,16 +65,26 @@ vec3 triangle_normal(vec3 p0, vec3 p1, vec3 p2) {
     return normalize(cross(p1 - p0, p2 - p0));
 }
 
+vec3 hsv2rgb(vec3 c) {
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+float rand(vec2 co){
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
 void main() {
     vec3 node = gl_in[0].gl_Position.xyz;
     vec3 node_parent = gl_in[1].gl_Position.xyz;
 
     vec3 dir = normalize(node_parent.xyz - node.xyz);
-
     mat4 rot = orientation(dir, vec3(0, 1, 0));
-
     mat4 translate_node = calcTranslateMat4(node);
     mat4 translate_node_parent = calcTranslateMat4(node_parent);
+
+    g_branch_color = hsv2rgb(vec3(rand(vec2(dir.x, dir.y)), 1.0, 1.0));
 
     for (int i = 0 ; i < NB ; ++i) {
         float angle1 = (PI*2.0 / NB) * i;
@@ -93,16 +104,14 @@ void main() {
         vec4 a1 = translate_node_parent * rot * p1;
         vec4 a2 = translate_node * rot * p2;
 
-        vec3 a_normal = -triangle_normal(a0.xyz, a1.xyz, a2.xyz);
+        vec3 a_normal = triangle_normal(a0.xyz, a2.xyz, a1.xyz);
 
-        gl_Position = projection * modelview * a0;
         g_normal = a_normal;
+        gl_Position = projection * modelview * a0;
         EmitVertex();
         gl_Position = projection * modelview * a2;
-        g_normal = a_normal;
         EmitVertex();
         gl_Position = projection * modelview * a1;
-        g_normal = a_normal;
         EmitVertex();
 
         //triangle 2
@@ -112,14 +121,12 @@ void main() {
 
         vec3 b_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz);
 
-        gl_Position = projection * modelview * b1;
         g_normal = b_normal;
+        gl_Position = projection * modelview * b1;
         EmitVertex();
         gl_Position = projection * modelview * b3;
-        g_normal = b_normal;
         EmitVertex();
         gl_Position = projection * modelview * b2;
-        g_normal = b_normal;
         EmitVertex();
 
         EndPrimitive();
