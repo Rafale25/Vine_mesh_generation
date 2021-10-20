@@ -7,7 +7,9 @@ from utils import *
 
 class TreeNode:
     def __init__(self, parent, pos):
-        self.pos = pos #glm.vec3()
+        self.pos = glm.vec3(pos) #glm.vec3()
+        self.pos_smooth = glm.vec3(pos) #glm.vec3()
+
         self.parent = parent
         self.childs = []
 
@@ -46,6 +48,23 @@ class Tree:
     def clear(self):
         self.root = TreeNode(parent=None, pos=glm.vec3(0, 0, 0))
         self.nodes = [] #[TreeNode]
+
+    def update(self):
+        for node in self.nodes:
+            pass
+            # if node.pos_smooth.x < node.pos.x:
+            #     node.pos_smooth.x
+            # else:
+            # node.pos_smooth.x += 1.0 - easeOutCirc(glm.distance(node.pos, node.pos_smooth))
+
+            # node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * 0.01
+            # node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * 0.01
+
+    def grow(self):
+        for node in self.nodes:
+            v = random_uniform_vec3() * 0.4
+            v.y = abs(v.y)
+            node.pos += v
 
     def generate(self):
         self.clear()

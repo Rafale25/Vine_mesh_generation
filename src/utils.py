@@ -3,6 +3,9 @@ from random import uniform
 
 import glm
 
+def easeOutCirc(x):
+    return sqrt(1.0 - pow(x - 1.0, 2.0));
+
 # def random_uniform_vec2():
 # 	angle = uniform(-math.pi, math.pi);
 # 	return cos(angle), sin(angle);

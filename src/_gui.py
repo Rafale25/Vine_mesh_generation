@@ -34,7 +34,11 @@ def imgui_newFrame(self, frametime):
     imgui.end_group()
 
     if imgui.button("regenerate"):
-        self.regenerate()
+        self.tree.generate()
+        self.update_tree_buffer()
+    if imgui.button("grow"):
+        self.tree.grow()
+        self.update_tree_buffer()
 
     imgui.end()
 
