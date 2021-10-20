@@ -76,11 +76,6 @@ class MyWindow(moderngl_window.WindowConfig):
                     vertex_shader='./tree.vert',
                     geometry_shader='./tree.geom',
                     fragment_shader='./tree.frag'),
-            'TREE_NORMAL':
-                self.load_program(
-                    vertex_shader='./tree_normal.vert',
-                    fragment_shader='./tree_normal.frag',
-                    geometry_shader='./tree_normal.geom'),
             'LINE':
                 self.load_program(
                     vertex_shader='./line.vert',
@@ -164,6 +159,7 @@ class MyWindow(moderngl_window.WindowConfig):
                 program['projection'].write(self.projection)
 
         self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
+        # self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
 
         self.program['TREE_OUTLINE']['texture0'].value = 0
         # self.program['TREE_OUTLINE']['texture1'].value = 1
