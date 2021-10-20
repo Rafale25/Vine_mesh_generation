@@ -6,6 +6,10 @@ def imgui_newFrame(self, frametime):
     imgui.begin("Properties", True)
 
     imgui.text("fps: {}".format(int(1.0 / frametime)))
+    for query, value in self.query_debug_values.items():
+        imgui.text("{}: {:.2f} ms".format(query, value))
+
+    imgui.spacing(); imgui.spacing()
 
     c, self.ctx.wireframe = imgui.checkbox("Wireframe", self.ctx.wireframe)
     c, self.cull_face = imgui.checkbox("Cull Face", self.cull_face)
@@ -14,7 +18,8 @@ def imgui_newFrame(self, frametime):
     c, self.draw_skeleton = imgui.checkbox("skeleton", self.draw_skeleton)
     c, self.draw_normals = imgui.checkbox("normals", self.draw_normals)
 
-    imgui.text("Tree Settings"); imgui.spacing()
+    imgui.spacing(); imgui.spacing()
+    imgui.text("Tree Settings");
     imgui.begin_group()
     c, Tree.MAX_DEPTH = imgui.slider_int(
         label="Max Depth",
@@ -33,6 +38,7 @@ def imgui_newFrame(self, frametime):
         max_value=4)
     imgui.end_group()
 
+    imgui.spacing(); imgui.spacing()
     if imgui.button("regenerate"):
         self.tree.generate()
         self.update_tree_buffer()

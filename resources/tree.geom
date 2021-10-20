@@ -144,3 +144,15 @@ void main() {
         EndPrimitive();
     }
 }
+
+/*
+1 - 3 - 5
+| \ | \ |
+0 - 2 - 4
+#indices for NB=3 ; GL_TRIANGLES
+0 2 1
+1 2 3
+
+2 4 3
+3 4 5
+*/

@@ -92,12 +92,16 @@ class MyWindow(moderngl_window.WindowConfig):
                 self.load_program('./linearize_depth.glsl'),
         }
 
+        self.query_debug_values = {
+            # 'first render':0.0,
+            # 'second render':0.0,
+        }
+
         ## skeleton --
-        self.buffer_skeleton = self.ctx.buffer(reserve=32)
+        self.buffer_skeleton = self.ctx.buffer(reserve=24)
         self.tree.generate()
         self.update_tree_buffer()
 
-        print(self.buffer_skeleton.read())
 
         self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES)
         self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
@@ -195,7 +199,6 @@ class MyWindow(moderngl_window.WindowConfig):
     def render(self, time_since_start, frametime):
         self.update(time_since_start, frametime)
 
-
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
 
         self.offscreen.clear(0.2, 0.2, 0.2)
@@ -204,14 +207,12 @@ class MyWindow(moderngl_window.WindowConfig):
         if self.draw_mesh:
             with self.query:
                 self.vao_tree.render(program=self.program['TREE'], vertices=self.tree.size() * 2)
-
-            print("First render pass: {:.2f} ms".format(self.query.elapsed * 10e-7))
+            self.query_debug_values['first render'] = self.query.elapsed * 10e-7
+            # print("First render pass: {:.2f} ms".format(self.query.elapsed * 10e-7))
         if self.draw_skeleton:
             self.vao_tree.render(program=self.program['LINE'], vertices=self.tree.size() * 2)
-
         # if self.draw_normals:
-        # self.vao_mesh.render(program=self.program['TREE_NORMAL'])
-
+            # self.vao_mesh.render(program=self.program['TREE_NORMAL'])
 
         self.ctx.screen.use()
         # self.ctx.clear(0.0, 0.0, 0.0)
@@ -220,9 +221,9 @@ class MyWindow(moderngl_window.WindowConfig):
         self.depth_texture.use(location=1)
         self.branch_color_texture.use(location=2)
 
-        # self.depth_sampler.use(location=1)  # temp override the parameters
-        self.quad_screen.render(self.program['TREE_OUTLINE'])
-        # self.depth_sampler.clear(location=1)  # Remove the override
+        with self.query:
+            self.quad_screen.render(self.program['TREE_OUTLINE'])
+        self.query_debug_values['second render'] = self.query.elapsed * 10e-7
 
         # problem, the previous texture depth are problematic
         self.debug_line(0, 0, 0, 0.5, 0, 0)
@@ -293,16 +294,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# """
-# 1 - 3 - 5
-# | \ | \ |
-# 0 - 2 - 4
-#
-# #indices for NB=3 ; GL_TRIANGLES
-# 0 2 1
-# 1 2 3
-#
-# 2 4 3
-# 3 4 5
-# """

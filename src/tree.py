@@ -51,12 +51,12 @@ class Tree:
 
     def update(self):
         for node in self.nodes:
-            node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * 0.01
-            node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * 0.01
+            node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * 0.07
+            node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * 0.07
 
     def grow(self):
         for node in self.nodes:
-            v = random_uniform_vec3() * 0.4
+            v = random_uniform_vec3() * 1.0
             v.y = abs(v.y)
             node.pos += v
 
