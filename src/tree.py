@@ -51,14 +51,8 @@ class Tree:
 
     def update(self):
         for node in self.nodes:
-            pass
-            # if node.pos_smooth.x < node.pos.x:
-            #     node.pos_smooth.x
-            # else:
-            # node.pos_smooth.x += 1.0 - easeOutCirc(glm.distance(node.pos, node.pos_smooth))
-
-            # node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * 0.01
-            # node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * 0.01
+            node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * 0.01
+            node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * 0.01
 
     def grow(self):
         for node in self.nodes:

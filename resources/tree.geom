@@ -56,9 +56,17 @@ mat4 calcTranslateMat4(vec3 v) {
     );
 }
 
-mat4 orientation(vec3 dir, vec3 up) {
-    vec3 rotation_axis = cross(up, dir);
-    return calcRotateMat4(rotation_axis);
+mat4 rotationMatrix(vec3 axis, float angle)
+{
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+
+    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,                                0.0,                                0.0,                                1.0);
 }
 
 vec3 triangle_normal(vec3 p0, vec3 p1, vec3 p2) {
@@ -79,8 +87,11 @@ void main() {
     vec3 node = gl_in[0].gl_Position.xyz;
     vec3 node_parent = gl_in[1].gl_Position.xyz;
 
-    vec3 dir = normalize(node_parent.xyz - node.xyz);
-    mat4 rot = orientation(dir, vec3(0, 1, 0));
+    vec3 dir = normalize(node_parent - node);
+    float yaw = atan(dir.z, dir.x);
+    float pitch = atan(sqrt(dir.z * dir.z + dir.x * dir.x), dir.y) + PI;
+
+    mat4 rot = calcRotateMat4(vec3(0.0, yaw, pitch));
     mat4 translate_node = calcTranslateMat4(node);
     mat4 translate_node_parent = calcTranslateMat4(node_parent);
 
@@ -98,8 +109,8 @@ void main() {
         float x2 = cos(angle2) * branch_thickness;
         float z2 = sin(angle2) * branch_thickness;
 
-        vec4 p1 = vec4(x1, 0, z1, 1.0);
-        vec4 p2 = vec4(x2, 0, z2, 1.0);
+        vec4 p1 = vec4(x1, 0.0, z1, 1.0);
+        vec4 p2 = vec4(x2, 0.0, z2, 1.0);
 
         //triangle 1
         vec4 a0 = translate_node * rot * p1;

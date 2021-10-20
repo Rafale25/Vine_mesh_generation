@@ -93,18 +93,14 @@ class MyWindow(moderngl_window.WindowConfig):
         }
 
         ## skeleton --
-        self.buffer_skeleton = self.ctx.buffer(reserve=1024)
+        self.buffer_skeleton = self.ctx.buffer(reserve=32)
         self.tree.generate()
         self.update_tree_buffer()
 
+        print(self.buffer_skeleton.read())
+
         self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES)
         self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
-        # --
-
-        ## mesh --
-        # self.buffer_mesh = self.ctx.buffer(data=array('f', self.gen_tree_mesh()))
-        # self.vao_mesh = VAO(name="mesh", mode=moderngl.TRIANGLES)
-        # self.vao_mesh.buffer(self.buffer_mesh, '3f 3f', ['in_vert', 'in_normal'])
         # --
 
         # depth --
@@ -145,7 +141,7 @@ class MyWindow(moderngl_window.WindowConfig):
             yield node.parent.pos_smooth.z
 
     def update_tree_buffer(self):
-        self.buffer_skeleton.orphan(self.tree.size() * 32)
+        self.buffer_skeleton.orphan(self.tree.size() * 24)
         data = array('f', self.gen_tree_skeleton())
         self.buffer_skeleton.write(data)
 
@@ -211,7 +207,7 @@ class MyWindow(moderngl_window.WindowConfig):
 
             print("First render pass: {:.2f} ms".format(self.query.elapsed * 10e-7))
         if self.draw_skeleton:
-            self.vao_tree.render(program=self.program['LINE'])
+            self.vao_tree.render(program=self.program['LINE'], vertices=self.tree.size() * 2)
 
         # if self.draw_normals:
         # self.vao_mesh.render(program=self.program['TREE_NORMAL'])

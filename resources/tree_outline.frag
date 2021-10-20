@@ -57,8 +57,8 @@ void main() {
     vec3 color_right = texture_at(texture2, texel, vec2(2, 0)).rgb;
     vec3 color_bot = texture_at(texture2, texel, vec2(0, 2)).rgb;
 
-    if (color_difference(color_center, color_right) > 0.2 ||
-        color_difference(color_center, color_bot) > 0.2)
+    if (color_difference(color_center, color_right) > 0.001 ||
+        color_difference(color_center, color_bot) > 0.001)
         value = 0.0;
 
     // float d = get_dist_at(texture1, texel, 2);
