@@ -1,6 +1,6 @@
 #version 440
 
-#define NB 8
+#define NB 32
 #define NB_VERTICES (NB * 2 * 3)
 
 layout (lines) in;
@@ -86,6 +86,8 @@ void main() {
 
     g_branch_color = hsv2rgb(vec3(rand(vec2(dir.x, dir.y)), 1.0, 1.0));
 
+    mat4 mvp = projection * modelview;
+
     for (int i = 0 ; i < NB ; ++i) {
         float angle1 = (PI*2.0 / NB) * i;
         float angle2 = (PI*2.0 / NB) * (i + 1);
@@ -104,14 +106,13 @@ void main() {
         vec4 a1 = translate_node_parent * rot * p1;
         vec4 a2 = translate_node * rot * p2;
 
-        vec3 a_normal = triangle_normal(a0.xyz, a2.xyz, a1.xyz);
+        g_normal = triangle_normal(a0.xyz, a2.xyz, a1.xyz);
 
-        g_normal = a_normal;
-        gl_Position = projection * modelview * a0;
+        gl_Position = mvp * a0;
         EmitVertex();
-        gl_Position = projection * modelview * a2;
+        gl_Position = mvp * a2;
         EmitVertex();
-        gl_Position = projection * modelview * a1;
+        gl_Position = mvp * a1;
         EmitVertex();
 
         //triangle 2
@@ -119,14 +120,13 @@ void main() {
         vec4 b2 = translate_node * rot * p2;
         vec4 b3 = translate_node_parent * rot * p2;
 
-        vec3 b_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz);
+        g_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz);
 
-        g_normal = b_normal;
-        gl_Position = projection * modelview * b1;
+        gl_Position = mvp * b1;
         EmitVertex();
-        gl_Position = projection * modelview * b3;
+        gl_Position = mvp * b3;
         EmitVertex();
-        gl_Position = projection * modelview * b2;
+        gl_Position = mvp * b2;
         EmitVertex();
 
         EndPrimitive();

@@ -46,7 +46,7 @@ class MyWindow(moderngl_window.WindowConfig):
     window_size = (1280, 720)
     fullscreen = False
     resizable = False
-    vsync = True
+    vsync = False
     resource_dir = './resources'
 
     def __init__(self, **kwargs):
@@ -136,6 +136,9 @@ class MyWindow(moderngl_window.WindowConfig):
 
         self.init_debug_draw()
 
+        self.query = self.ctx.query(samples=False, time=True)
+        self.tick = 60
+
     def gen_tree_skeleton(self):
         for node in self.tree.nodes:
             yield node.pos.x
@@ -199,17 +202,23 @@ class MyWindow(moderngl_window.WindowConfig):
     def render(self, time_since_start, frametime):
         self.update(time_since_start, frametime)
 
+
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
 
         self.offscreen.clear(0.2, 0.2, 0.2)
         self.offscreen.use()
 
         if self.draw_mesh:
-            self.vao_tree.render(program=self.program['TREE'])
+            with self.query:
+                self.vao_tree.render(program=self.program['TREE'])
+
+            print("First render pass: {:.2f} ms".format(self.query.elapsed * 10e-7))
         if self.draw_skeleton:
             self.vao_tree.render(program=self.program['LINE'])
+
         # if self.draw_normals:
         # self.vao_mesh.render(program=self.program['TREE_NORMAL'])
+
 
         self.ctx.screen.use()
         # self.ctx.clear(0.0, 0.0, 0.0)
