@@ -53,7 +53,7 @@ class Tree:
         self.nodes = [] #[TreeNode]
 
     def update(self):
-        speed = 0.05
+        speed = 0.07
         for node in self.nodes:
             node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * speed
             node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * speed
@@ -68,7 +68,7 @@ class Tree:
                 node.pos += dir * 0.2
             else:
                 nb_childs = random.randint(Tree.MIN_CHILDS, Tree.MAX_CHILDS)
-                if self.size() > 20:
+                if self.size() > 50:
                     nb_childs = 1
 
                 offset = random_uniform_vec3() * 0.01
