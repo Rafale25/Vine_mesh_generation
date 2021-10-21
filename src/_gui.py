@@ -5,9 +5,12 @@ def imgui_newFrame(self, frametime):
     imgui.new_frame()
     imgui.begin("Properties", True)
 
-    imgui.text("fps: {}".format(int(1.0 / frametime)))
+    imgui.text("fps: {:.2f}".format(self.fps_counter.get_fps()))
     for query, value in self.query_debug_values.items():
         imgui.text("{}: {:.2f} ms".format(query, value))
+
+    imgui.text("branches: {}".format(self.tree.size()))
+
 
     imgui.spacing(); imgui.spacing()
 
@@ -17,6 +20,8 @@ def imgui_newFrame(self, frametime):
     c, self.draw_mesh = imgui.checkbox("mesh", self.draw_mesh)
     c, self.draw_skeleton = imgui.checkbox("skeleton", self.draw_skeleton)
     c, self.draw_normals = imgui.checkbox("normals", self.draw_normals)
+
+    c, self.isGrowing = imgui.checkbox("isGrowing", self.isGrowing)
 
     imgui.spacing(); imgui.spacing()
     imgui.text("Tree Settings");

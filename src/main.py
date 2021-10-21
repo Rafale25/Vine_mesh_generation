@@ -26,6 +26,7 @@ from array import array
 from utils import *
 from _config import CameraOrbit, Camera, Light
 
+from fps_counter import FpsCounter
 from tree import Tree, TreeNode
 
 """
@@ -64,10 +65,13 @@ class MyWindow(moderngl_window.WindowConfig):
         self.draw_normals = False
         self.draw_mesh = True
 
+        self.isGrowing = False
+
         # for testing
         self.color1 = vec3(0.4, 0.7, 0.0)
         self.color2 = vec3(0.3, 0.3, 0.0)
 
+        self.fps_counter = FpsCounter()
         self.camera = Camera()
         self.projection = glm.perspective(self.camera.fov, self.wnd.aspect_ratio, self.camera.near, self.camera.far)
 
@@ -183,6 +187,12 @@ class MyWindow(moderngl_window.WindowConfig):
         Light.x = cos(time_since_start*0.2) * 6.0
         Light.y = 6.0
         Light.z = sin(time_since_start*0.2) * 6.0
+
+        self.fps_counter.update(frametime)
+
+        if self.isGrowing:
+            self.tree.grow()
+            self.update_tree_buffer()
 
         self.tree.update()
         data = array('f', self.gen_tree_skeleton())

@@ -7,17 +7,20 @@ from utils import *
 
 class TreeNode:
     def __init__(self, parent, pos):
-        self.pos = glm.vec3(pos) #glm.vec3()
-        self.pos_smooth = glm.vec3(pos) #glm.vec3()
+        self.pos = glm.vec3(pos)
+        self.pos_smooth = glm.vec3(pos)
 
         self.parent = parent
         self.childs = []
+
+    def length(self):
+        return glm.distance(self.pos, self.parent.pos)
 
     def __str__(self):
         return "[{}: {}]".format(self.pos, self.childs)
 
 class Tree:
-    MAX_LEN = 5.0
+    MAX_LEN = 1.0
     MAX_DEPTH = 4
     MIN_CHILDS = 2
     MAX_CHILDS = 2
@@ -56,9 +59,29 @@ class Tree:
 
     def grow(self):
         for node in self.nodes:
-            v = random_uniform_vec3() * 1.0
-            v.y = abs(v.y)
-            node.pos += v
+            if len(node.childs) > 0 and node.length() >= Tree.MAX_LEN:
+                continue
+
+            if node.length() < Tree.MAX_LEN:
+                dir = glm.normalize(glm.sub(node.pos, node.parent.pos))
+                node.pos += dir * 0.2
+            else:
+                nb_childs = random.randint(Tree.MIN_CHILDS, Tree.MAX_CHILDS)
+                if self.size() > 100:
+                    nb_childs = 1
+
+                offset = random_uniform_vec3() * 0.01
+                offset.y = math.fabs(offset.y)
+
+                for i in range(nb_childs):
+                    new_child_node = TreeNode(parent=node, pos=node.pos + offset)
+                    node.childs.append(new_child_node)
+                    self.nodes.append(new_child_node)
+
+        # for node in self.nodes:
+        #     v = random_uniform_vec3() * 1.0
+        #     v.y = abs(v.y)
+        #     node.pos += v
 
     def generate(self):
         self.clear()

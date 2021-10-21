@@ -1,6 +1,6 @@
 #version 440
 
-#define NB 8
+#define NB 6
 #define NB_VERTICES (NB * 2 * 3)
 
 layout (lines) in;
