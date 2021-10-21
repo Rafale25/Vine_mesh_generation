@@ -64,6 +64,10 @@ class MyWindow(moderngl_window.WindowConfig):
         self.draw_normals = False
         self.draw_mesh = True
 
+        # for testing
+        self.color1 = vec3(0.4, 0.7, 0.0)
+        self.color2 = vec3(0.3, 0.3, 0.0)
+
         self.camera = Camera()
         self.projection = glm.perspective(self.camera.fov, self.wnd.aspect_ratio, self.camera.near, self.camera.far)
 
@@ -158,8 +162,11 @@ class MyWindow(moderngl_window.WindowConfig):
             if 'projection' in program:
                 program['projection'].write(self.projection)
 
-        self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
+        self.program['TREE']['lightPosition'].write(vec3(Light.x, Light.y, Light.z))
         # self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
+        # for debug --
+        self.program['TREE']['color1'].write(vec3(self.color1))
+        self.program['TREE']['color2'].write(vec3(self.color2))
 
         self.program['TREE_OUTLINE']['texture0'].value = 0
         # self.program['TREE_OUTLINE']['texture1'].value = 1
@@ -208,7 +215,6 @@ class MyWindow(moderngl_window.WindowConfig):
             with self.query:
                 self.vao_tree.render(program=self.program['TREE'], vertices=self.tree.size() * 2)
             self.query_debug_values['first render'] = self.query.elapsed * 10e-7
-            # print("First render pass: {:.2f} ms".format(self.query.elapsed * 10e-7))
         if self.draw_skeleton:
             self.vao_tree.render(program=self.program['LINE'], vertices=self.tree.size() * 2)
         # if self.draw_normals:

@@ -13,6 +13,7 @@ uniform mat4 projection;
 
 const float branch_thickness = 0.1;
 
+out vec3 g_position;
 out vec3 g_normal;
 out vec3 g_branch_color;
 
@@ -54,19 +55,6 @@ mat4 calcTranslateMat4(vec3 v) {
         0.0, 0.0, 1.0, 0.0,
         v.x, v.y, v.z, 1.0
     );
-}
-
-mat4 rotationMatrix(vec3 axis, float angle)
-{
-    axis = normalize(axis);
-    float s = sin(angle);
-    float c = cos(angle);
-    float oc = 1.0 - c;
-
-    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
-                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
-                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
-                0.0,                                0.0,                                0.0,                                1.0);
 }
 
 vec3 triangle_normal(vec3 p0, vec3 p1, vec3 p2) {
@@ -121,10 +109,13 @@ void main() {
         g_normal = triangle_normal(a0.xyz, a2.xyz, a1.xyz);
 
         gl_Position = mvp * a0;
+        g_position = a0.xyz;
         EmitVertex();
         gl_Position = mvp * a2;
+        g_position = a2.xyz;
         EmitVertex();
         gl_Position = mvp * a1;
+        g_position = a1.xyz;
         EmitVertex();
 
         //triangle 2
@@ -135,10 +126,13 @@ void main() {
         g_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz);
 
         gl_Position = mvp * b1;
+        g_position = b1.xyz;
         EmitVertex();
         gl_Position = mvp * b3;
+        g_position = b3.xyz;
         EmitVertex();
         gl_Position = mvp * b2;
+        g_position = b2.xyz;
         EmitVertex();
 
         EndPrimitive();

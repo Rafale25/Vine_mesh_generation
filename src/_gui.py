@@ -46,6 +46,13 @@ def imgui_newFrame(self, frametime):
         self.tree.grow()
         self.update_tree_buffer()
 
+    c, self.color1 = imgui.color_edit3(
+        "color 1", *self.color1
+    )
+    c, self.color2 = imgui.color_edit3(
+        "color 2", *self.color2
+    )
+
     imgui.end()
 
 def imgui_render(self):
