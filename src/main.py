@@ -41,13 +41,25 @@ seconde pass:
     add outline to texture using depth and color texture
 """
 
+# debug
+global_clock = None
+
+def START_CLOCK():
+    global global_clock
+    global_clock = time.time()
+
+def STOP_CLOCK(name):
+    end_time = time.time()
+    print("timer {}: {:.2f}ms".format(name, (end_time - global_clock) * 1000))
+
+
 class MyWindow(moderngl_window.WindowConfig):
     title = 'Tree'
     gl_version = (4, 3)
-    window_size = (1280, 720)
-    fullscreen = False
+    window_size = (1920, 1080)
+    fullscreen = True
     resizable = False
-    vsync = False
+    vsync = True
     resource_dir = './resources'
 
     def __init__(self, **kwargs):
@@ -62,10 +74,11 @@ class MyWindow(moderngl_window.WindowConfig):
 
         self.cull_face = True
         self.draw_skeleton = False
-        self.draw_normals = False
         self.draw_mesh = True
+        # self.draw_normals = False
 
         self.isGrowing = False
+        self.updateTreeAndBuffer = True
 
         # for testing
         self.color1 = vec3(0.4, 0.7, 0.0)
@@ -194,9 +207,10 @@ class MyWindow(moderngl_window.WindowConfig):
             self.tree.grow()
             self.update_tree_buffer()
 
-        self.tree.update()
-        data = array('f', self.gen_tree_skeleton())
-        self.buffer_skeleton.write(data)
+        if self.updateTreeAndBuffer:
+            self.tree.update()
+            data = array('f', self.gen_tree_skeleton())
+            self.buffer_skeleton.write(data)
 
         if self.wnd.is_key_pressed(self.wnd.keys.Z):
             self.camera.move_forward(self.camera.speed)

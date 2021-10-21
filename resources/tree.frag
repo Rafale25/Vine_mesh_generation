@@ -119,14 +119,15 @@ uniform vec3 color2;
 void main() {
     float intensity = dot(normalize(lightPosition), normalize(g_normal));
 
-    float value = 1.0;
+    float value = intensity;
     if (intensity > 0.5)
         value = 1.0;
     else
         value = 0.4;
 
+
     // for adding noise to the color
-    float noise_value = snoise(g_position);
+    float noise_value = map(snoise(g_position*2.0), 0.0, 1.0, 0.2, 1.0);
     vec3 c = color1 + (color2 * noise_value);
 
     // vec3 color1 = vec3(0.3, 0.7, 0.0);

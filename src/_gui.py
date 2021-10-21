@@ -11,7 +11,6 @@ def imgui_newFrame(self, frametime):
 
     imgui.text("branches: {}".format(self.tree.size()))
 
-
     imgui.spacing(); imgui.spacing()
 
     c, self.ctx.wireframe = imgui.checkbox("Wireframe", self.ctx.wireframe)
@@ -19,9 +18,10 @@ def imgui_newFrame(self, frametime):
 
     c, self.draw_mesh = imgui.checkbox("mesh", self.draw_mesh)
     c, self.draw_skeleton = imgui.checkbox("skeleton", self.draw_skeleton)
-    c, self.draw_normals = imgui.checkbox("normals", self.draw_normals)
+    # c, self.draw_normals = imgui.checkbox("normals", self.draw_normals)
 
     c, self.isGrowing = imgui.checkbox("isGrowing", self.isGrowing)
+    c, self.updateTreeAndBuffer = imgui.checkbox("updateTreeAndBuffer", self.updateTreeAndBuffer)
 
     imgui.spacing(); imgui.spacing()
     imgui.text("Tree Settings");

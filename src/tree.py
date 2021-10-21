@@ -53,9 +53,10 @@ class Tree:
         self.nodes = [] #[TreeNode]
 
     def update(self):
+        speed = 0.05
         for node in self.nodes:
-            node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * 0.07
-            node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * 0.07
+            node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * speed
+            node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * speed
 
     def grow(self):
         for node in self.nodes:
@@ -67,11 +68,11 @@ class Tree:
                 node.pos += dir * 0.2
             else:
                 nb_childs = random.randint(Tree.MIN_CHILDS, Tree.MAX_CHILDS)
-                if self.size() > 100:
+                if self.size() > 20:
                     nb_childs = 1
 
                 offset = random_uniform_vec3() * 0.01
-                offset.y = math.fabs(offset.y)
+                # offset.y = math.fabs(offset.y)
 
                 for i in range(nb_childs):
                     new_child_node = TreeNode(parent=node, pos=node.pos + offset)
