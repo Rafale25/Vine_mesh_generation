@@ -1,7 +1,8 @@
 #version 440
 
-#define NB 8
-#define NB_VERTICES (NB * 2 * 3)
+#define NB 4
+#define NB_SEGMENTS 10
+#define NB_VERTICES (NB * NB_SEGMENTS * 2*3)
 
 layout (lines) in;
 layout (triangle_strip, max_vertices = NB_VERTICES) out;
@@ -71,7 +72,7 @@ float rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-void output_segment(vec3 p1, vec3 p2) {
+void output_segment(vec3 p1, vec3 p2, int index) {
     vec3 dir = normalize(p2 - p1);
     float yaw = atan(dir.z, dir.x);
     float pitch = atan(sqrt(dir.z * dir.z + dir.x * dir.x), dir.y) + PI;
@@ -80,7 +81,7 @@ void output_segment(vec3 p1, vec3 p2) {
     mat4 translate_node = calcTranslateMat4(p1);
     mat4 translate_node_parent = calcTranslateMat4(p2);
 
-    g_branch_color = hsv2rgb(vec3(rand(vec2(dir.x, dir.y)), 1.0, 1.0));
+    g_branch_color = hsv2rgb(vec3(rand(vec2(dir.x + index, dir.y)), 1.0, 1.0));
 
     mat4 mvp = projection * modelview;
 
@@ -139,7 +140,26 @@ void main() {
     vec3 node = gl_in[0].gl_Position.xyz;
     vec3 node_parent = gl_in[1].gl_Position.xyz;
 
-    output_segment(node, node_parent);
+    vec3 dir = normalize(node - node_parent);
+
+    vec3 parent_parent = node - dir;
+
+    for (int i = 0 ; i < NB_SEGMENTS ; ++i) {
+        float t1 = (1.0 / NB_SEGMENTS) * (i + 0);
+        float t2 = (1.0 / NB_SEGMENTS) * (i + 1);
+
+        // interpolation
+        vec3 a_l0 = mix(node, node_parent, t1);
+        vec3 a_l1 = mix(node_parent, parent_parent, t1);
+        vec3 a_q0 = mix(a_l0, a_l1, t1);
+
+        vec3 b_l0 = mix(node, node_parent, t2);
+        vec3 b_l1 = mix(node_parent, parent_parent, t2);
+        vec3 b_q0 = mix(b_l0, b_l1, t2);
+        // --
+
+        output_segment(a_q0, b_q0, i*255);
+    }
 }
 
 /*
