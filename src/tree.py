@@ -65,10 +65,10 @@ class Tree:
 
             if node.length() < Tree.MAX_LEN:
                 dir = glm.normalize(glm.sub(node.pos, node.parent.pos))
-                node.pos += dir * 0.2
+                node.pos += dir * 0.15
             else:
                 nb_childs = random.randint(Tree.MIN_CHILDS, Tree.MAX_CHILDS)
-                if self.size() > 50:
+                if self.size() > 20:
                     nb_childs = 1
 
                 offset = random_uniform_vec3() * 0.01
@@ -78,11 +78,6 @@ class Tree:
                     new_child_node = TreeNode(parent=node, pos=node.pos + offset)
                     node.childs.append(new_child_node)
                     self.nodes.append(new_child_node)
-
-        # for node in self.nodes:
-        #     v = random_uniform_vec3() * 1.0
-        #     v.y = abs(v.y)
-        #     node.pos += v
 
     def generate(self):
         self.clear()

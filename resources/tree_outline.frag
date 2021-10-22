@@ -53,6 +53,7 @@ void main() {
 
     float value = 1.0;
 
+    // branch color; for outline
     vec3 color_center = texture(texture2, texel).rgb;
     vec3 color_right = texture_at(texture2, texel, vec2(2, 0)).rgb;
     vec3 color_bot = texture_at(texture2, texel, vec2(0, 2)).rgb;
