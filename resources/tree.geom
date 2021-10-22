@@ -105,7 +105,6 @@ void main() {
         vec4 a1 = translate_node_parent * rot * p1;
         vec4 a2 = translate_node * rot * p2;
 
-
         g_normal = triangle_normal(a0.xyz, a2.xyz, a1.xyz);
 
         gl_Position = mvp * a0;
