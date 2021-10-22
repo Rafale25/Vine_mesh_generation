@@ -71,17 +71,14 @@ float rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-void main() {
-    vec3 node = gl_in[0].gl_Position.xyz;
-    vec3 node_parent = gl_in[1].gl_Position.xyz;
-
-    vec3 dir = normalize(node_parent - node);
+void output_segment(vec3 p1, vec3 p2) {
+    vec3 dir = normalize(p2 - p1);
     float yaw = atan(dir.z, dir.x);
     float pitch = atan(sqrt(dir.z * dir.z + dir.x * dir.x), dir.y) + PI;
 
     mat4 rot = calcRotateMat4(vec3(0.0, yaw, pitch));
-    mat4 translate_node = calcTranslateMat4(node);
-    mat4 translate_node_parent = calcTranslateMat4(node_parent);
+    mat4 translate_node = calcTranslateMat4(p1);
+    mat4 translate_node_parent = calcTranslateMat4(p2);
 
     g_branch_color = hsv2rgb(vec3(rand(vec2(dir.x, dir.y)), 1.0, 1.0));
 
@@ -136,6 +133,13 @@ void main() {
 
         EndPrimitive();
     }
+}
+
+void main() {
+    vec3 node = gl_in[0].gl_Position.xyz;
+    vec3 node_parent = gl_in[1].gl_Position.xyz;
+
+    output_segment(node, node_parent);
 }
 
 /*
