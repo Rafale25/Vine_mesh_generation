@@ -84,6 +84,7 @@ class MyWindow(moderngl_window.WindowConfig):
         self.color1 = vec3(0.4, 0.7, 0.0)
         self.color2 = vec3(0.3, 0.3, 0.0)
 
+        self.query_debug_values = {}
         self.fps_counter = FpsCounter()
         self.camera = Camera()
         self.projection = glm.perspective(self.camera.fov, self.wnd.aspect_ratio, self.camera.near, self.camera.far)
@@ -113,18 +114,14 @@ class MyWindow(moderngl_window.WindowConfig):
                 self.load_program('./linearize_depth.glsl'),
         }
 
-        self.query_debug_values = {
-            # 'first render':0.0,
-            # 'second render':0.0,
-        }
-
         ## skeleton --
         self.buffer_skeleton = self.ctx.buffer(reserve=24)
         self.tree.generate()
         self.update_tree_buffer()
 
 
-        self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES)
+        # self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES)
+        self.vao_tree = VAO(name="skeleton", mode=moderngl.TRIANGLES)
         self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
         # --
 
@@ -165,8 +162,19 @@ class MyWindow(moderngl_window.WindowConfig):
             yield node.parent.pos_smooth.y
             yield node.parent.pos_smooth.z
 
+            # parent of parent for bezier curve
+            if node.parent.parent:
+                yield node.parent.parent.pos_smooth.x
+                yield node.parent.parent.pos_smooth.y
+                yield node.parent.parent.pos_smooth.z
+            else:
+                yield node.parent.pos_smooth.x
+                yield node.parent.pos_smooth.y
+                yield node.parent.pos_smooth.z
+
     def update_tree_buffer(self):
-        self.buffer_skeleton.orphan(self.tree.size() * 24)
+        self.buffer_skeleton.orphan(self.tree.size() * 36)
+        # self.buffer_skeleton.orphan(self.tree.size() * 24)
         data = array('f', self.gen_tree_skeleton())
         self.buffer_skeleton.write(data)
 
@@ -237,7 +245,7 @@ class MyWindow(moderngl_window.WindowConfig):
 
         if self.draw_mesh:
             with self.query:
-                self.vao_tree.render(program=self.program['TREE'], vertices=self.tree.size() * 2)
+                self.vao_tree.render(program=self.program['TREE'], vertices=self.tree.size() * 3)
             self.query_debug_values['first render'] = self.query.elapsed * 10e-7
         if self.draw_skeleton:
             self.vao_tree.render(program=self.program['LINE'], vertices=self.tree.size() * 2)

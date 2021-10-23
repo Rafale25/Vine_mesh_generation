@@ -1,10 +1,11 @@
 #version 440
 
-#define NB 4
-#define NB_SEGMENTS 10
+#define NB 8
+#define NB_SEGMENTS 4
 #define NB_VERTICES (NB * NB_SEGMENTS * 2*3)
 
-layout (lines) in;
+// layout (lines) in;
+layout (triangles) in;
 layout (triangle_strip, max_vertices = NB_VERTICES) out;
 
 uniform mat4 modelview;
@@ -140,9 +141,9 @@ void main() {
     vec3 node = gl_in[0].gl_Position.xyz;
     vec3 node_parent = gl_in[1].gl_Position.xyz;
 
-    vec3 dir = normalize(node - node_parent);
+    // vec3 dir = normalize(node - node_parent);
 
-    vec3 parent_parent = node - dir;
+    vec3 parent_parent = gl_in[2].gl_Position.xyz;
 
     for (int i = 0 ; i < NB_SEGMENTS ; ++i) {
         float t1 = (1.0 / NB_SEGMENTS) * (i + 0);
@@ -158,7 +159,7 @@ void main() {
         vec3 b_q0 = mix(b_l0, b_l1, t2);
         // --
 
-        output_segment(a_q0, b_q0, i*255);
+        output_segment(a_q0, b_q0, i);
     }
 }
 
