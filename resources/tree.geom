@@ -143,6 +143,9 @@ void main() {
 
     // vec3 dir = normalize(node - node_parent);
 
+    // BUG: Tree is growing with 'duplicates' because
+    // the curbe start from the 'parent parent' et not just parent
+
     vec3 parent_parent = gl_in[2].gl_Position.xyz;
 
     for (int i = 0 ; i < NB_SEGMENTS ; ++i) {
