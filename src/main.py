@@ -115,13 +115,13 @@ class MyWindow(moderngl_window.WindowConfig):
         }
 
         ## skeleton --
-        self.buffer_skeleton = self.ctx.buffer(reserve=24)
+        self.buffer_skeleton = self.ctx.buffer(reserve=48)
         self.tree.generate()
         self.update_tree_buffer()
 
 
         # self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES)
-        self.vao_tree = VAO(name="skeleton", mode=moderngl.TRIANGLES)
+        self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES_ADJACENCY)
         self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
         # --
 
@@ -172,8 +172,18 @@ class MyWindow(moderngl_window.WindowConfig):
                 yield node.parent.pos_smooth.y
                 yield node.parent.pos_smooth.z
 
+            if len(node.childs) > 0:
+                yield node.childs[0].pos_smooth.x
+                yield node.childs[0].pos_smooth.y
+                yield node.childs[0].pos_smooth.z
+            else:
+                yield node.pos_smooth.x
+                yield node.pos_smooth.y
+                yield node.pos_smooth.z
+
     def update_tree_buffer(self):
-        self.buffer_skeleton.orphan(self.tree.size() * 36)
+        self.buffer_skeleton.orphan(self.tree.size() * 48)
+        # self.buffer_skeleton.orphan(self.tree.size() * 36)
         # self.buffer_skeleton.orphan(self.tree.size() * 24)
         data = array('f', self.gen_tree_skeleton())
         self.buffer_skeleton.write(data)
@@ -245,7 +255,10 @@ class MyWindow(moderngl_window.WindowConfig):
 
         if self.draw_mesh:
             with self.query:
-                self.vao_tree.render(program=self.program['TREE'], vertices=self.tree.size() * 3)
+                self.vao_tree.render(
+                    program=self.program['TREE'],
+                    vertices=self.tree.size() * 4,
+                    instances=1)
             self.query_debug_values['first render'] = self.query.elapsed * 10e-7
         if self.draw_skeleton:
             self.vao_tree.render(program=self.program['LINE'], vertices=self.tree.size() * 2)

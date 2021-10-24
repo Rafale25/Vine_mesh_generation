@@ -1,11 +1,11 @@
 #version 440
 
-#define NB 8
-#define NB_SEGMENTS 4
+#define NB 3
+#define NB_SEGMENTS 6
 #define NB_VERTICES (NB * NB_SEGMENTS * 2*3)
 
 // layout (lines) in;
-layout (triangles) in;
+layout (lines_adjacency) in;
 layout (triangle_strip, max_vertices = NB_VERTICES) out;
 
 uniform mat4 modelview;
@@ -73,7 +73,7 @@ float rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-void output_segment(vec3 p1, vec3 p2, int index) {
+void output_segment(vec3 p1, vec3 p2) {
     vec3 dir = normalize(p2 - p1);
     float yaw = atan(dir.z, dir.x);
     float pitch = atan(sqrt(dir.z * dir.z + dir.x * dir.x), dir.y) + PI;
@@ -82,7 +82,8 @@ void output_segment(vec3 p1, vec3 p2, int index) {
     mat4 translate_node = calcTranslateMat4(p1);
     mat4 translate_node_parent = calcTranslateMat4(p2);
 
-    g_branch_color = hsv2rgb(vec3(rand(vec2(dir.x + index, dir.y)), 1.0, 1.0));
+    // g_branch_color = hsv2rgb(vec3(rand(vec2(dir.x + index, dir.y)), 1.0, 1.0));
+    // g_branch_color = bcolor;
 
     mat4 mvp = projection * modelview;
 
@@ -137,32 +138,56 @@ void output_segment(vec3 p1, vec3 p2, int index) {
     }
 }
 
+// t: 0.0 -> 1.0
+vec3 getSplinePoint(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {
+    t = t - int(t);
+
+    float tt = t * t;
+    float ttt = tt * t;
+
+    float q1 = -ttt + 2.0*tt - t;
+    float q2 = 3.0*ttt - 5.0*tt + 2.0;
+    float q3 = -3.0*ttt + 4.0*tt +t;
+    float q4 = ttt - tt;
+
+    float tx = p0.x * q1 +
+              p1.x * q2 +
+              p2.x * q3 +
+              p3.x * q4;
+
+    float ty = p0.y * q1 +
+              p1.y * q2 +
+              p2.y * q3 +
+              p3.y * q4;
+
+    float tz = p0.z * q1 +
+              p1.z * q2 +
+              p2.z * q3 +
+              p3.z * q4;
+
+    return vec3(tx * 0.5, ty * 0.5, tz * 0.5);
+}
+
 void main() {
     vec3 node = gl_in[0].gl_Position.xyz;
     vec3 node_parent = gl_in[1].gl_Position.xyz;
 
-    // vec3 dir = normalize(node - node_parent);
-
-    // BUG: Tree is growing with 'duplicates' because
-    // the curbe start from the 'parent parent' et not just parent
-
     vec3 parent_parent = gl_in[2].gl_Position.xyz;
+    vec3 node_child = gl_in[3].gl_Position.xyz;
+
+    // g_branch_color = hsv2rgb(vec3(rand(vec2(dir.x + index, dir.y)), 1.0, 1.0));
 
     for (int i = 0 ; i < NB_SEGMENTS ; ++i) {
         float t1 = (1.0 / NB_SEGMENTS) * (i + 0);
-        float t2 = (1.0 / NB_SEGMENTS) * (i + 1);
+        float t2 = clamp((1.0 / NB_SEGMENTS) * (i + 1), 0.0, 0.999);
 
-        // interpolation
-        vec3 a_l0 = mix(node, node_parent, t1);
-        vec3 a_l1 = mix(node_parent, parent_parent, t1);
-        vec3 a_q0 = mix(a_l0, a_l1, t1);
+        vec3 p1 = getSplinePoint(parent_parent, node_parent, node, node_child, t1);
+        vec3 p2 = getSplinePoint(parent_parent, node_parent, node, node_child, t2);
 
-        vec3 b_l0 = mix(node, node_parent, t2);
-        vec3 b_l1 = mix(node_parent, parent_parent, t2);
-        vec3 b_q0 = mix(b_l0, b_l1, t2);
-        // --
+        vec3 dir = normalize(p1 - p2);
+        g_branch_color = hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0));
 
-        output_segment(a_q0, b_q0, i);
+        output_segment(p1, p2);
     }
 }
 

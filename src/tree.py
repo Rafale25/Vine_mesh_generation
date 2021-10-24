@@ -53,10 +53,12 @@ class Tree:
         self.nodes = [] #[TreeNode]
 
     def update(self):
-        speed = 0.07
+        speed = 1.0
         for node in self.nodes:
-            node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * speed
-            node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * speed
+        #     node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * speed
+        #     node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * speed
+            node.pos_smooth.x = node.pos.x
+            node.pos_smooth.y = node.pos.y
 
     def grow(self):
         for node in self.nodes:
@@ -65,13 +67,13 @@ class Tree:
 
             if node.length() < Tree.MAX_LEN:
                 dir = glm.normalize(glm.sub(node.pos, node.parent.pos))
-                node.pos += dir * 0.15
+                node.pos += dir * 0.1
             else:
                 nb_childs = random.randint(Tree.MIN_CHILDS, Tree.MAX_CHILDS)
                 if self.size() > 20:
                     nb_childs = 1
 
-                offset = random_uniform_vec3() * 0.01
+                offset = random_uniform_vec3() * 0.001
                 # offset.y = math.fabs(offset.y)
 
                 for i in range(nb_childs):
