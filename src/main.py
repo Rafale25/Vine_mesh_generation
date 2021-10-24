@@ -258,10 +258,10 @@ class MyWindow(moderngl_window.WindowConfig):
                 self.vao_tree.render(
                     program=self.program['TREE'],
                     vertices=self.tree.size() * 4,
-                    instances=1)
+                    instances=10)
             self.query_debug_values['first render'] = self.query.elapsed * 10e-7
         if self.draw_skeleton:
-            self.vao_tree.render(program=self.program['LINE'], vertices=self.tree.size() * 2)
+            self.vao_tree.render(program=self.program['LINE'], vertices=self.tree.size() * 4)
         # if self.draw_normals:
             # self.vao_mesh.render(program=self.program['TREE_NORMAL'])
 

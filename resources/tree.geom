@@ -1,12 +1,13 @@
 #version 440
 
-#define NB 3
-#define NB_SEGMENTS 6
+#define NB 4
+#define NB_SEGMENTS 10
 #define NB_VERTICES (NB * NB_SEGMENTS * 2*3)
 
 // layout (lines) in;
 layout (lines_adjacency) in;
 layout (triangle_strip, max_vertices = NB_VERTICES) out;
+layout(invocations = NB_SEGMENTS) in;
 
 uniform mat4 modelview;
 uniform mat4 projection;
@@ -82,6 +83,8 @@ void output_segment(vec3 p1, vec3 p2) {
     mat4 translate_node = calcTranslateMat4(p1);
     mat4 translate_node_parent = calcTranslateMat4(p2);
 
+
+
     // g_branch_color = hsv2rgb(vec3(rand(vec2(dir.x + index, dir.y)), 1.0, 1.0));
     // g_branch_color = bcolor;
 
@@ -151,19 +154,19 @@ vec3 getSplinePoint(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {
     float q4 = ttt - tt;
 
     float tx = p0.x * q1 +
-              p1.x * q2 +
-              p2.x * q3 +
-              p3.x * q4;
+               p1.x * q2 +
+               p2.x * q3 +
+               p3.x * q4;
 
     float ty = p0.y * q1 +
-              p1.y * q2 +
-              p2.y * q3 +
-              p3.y * q4;
+               p1.y * q2 +
+               p2.y * q3 +
+               p3.y * q4;
 
     float tz = p0.z * q1 +
-              p1.z * q2 +
-              p2.z * q3 +
-              p3.z * q4;
+               p1.z * q2 +
+               p2.z * q3 +
+               p3.z * q4;
 
     return vec3(tx * 0.5, ty * 0.5, tz * 0.5);
 }
@@ -175,9 +178,11 @@ void main() {
     vec3 parent_parent = gl_in[2].gl_Position.xyz;
     vec3 node_child = gl_in[3].gl_Position.xyz;
 
-    // g_branch_color = hsv2rgb(vec3(rand(vec2(dir.x + index, dir.y)), 1.0, 1.0));
+    g_branch_color = hsv2rgb(vec3(rand(vec2(node.x, node.y)), 1.0, 1.0));
+    // g_branch_color = hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0));
 
-    for (int i = 0 ; i < NB_SEGMENTS ; ++i) {
+    int i = gl_InvocationID.x;
+    // for (int i = 0 ; i < NB_SEGMENTS ; ++i) {
         float t1 = (1.0 / NB_SEGMENTS) * (i + 0);
         float t2 = clamp((1.0 / NB_SEGMENTS) * (i + 1), 0.0, 0.999);
 
@@ -185,10 +190,10 @@ void main() {
         vec3 p2 = getSplinePoint(parent_parent, node_parent, node, node_child, t2);
 
         vec3 dir = normalize(p1 - p2);
-        g_branch_color = hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0));
+        // g_branch_color = hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0));
 
         output_segment(p1, p2);
-    }
+    // }
 }
 
 /*
