@@ -1,8 +1,8 @@
 #version 440
 
-#define NB 4
-#define NB_SEGMENTS 10
-#define NB_VERTICES (NB * NB_SEGMENTS * 2*3)
+#define NB 32
+#define NB_SEGMENTS 8
+#define NB_VERTICES (NB * 2*3)
 
 // layout (lines) in;
 layout (lines_adjacency) in;

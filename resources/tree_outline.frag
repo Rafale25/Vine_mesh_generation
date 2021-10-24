@@ -62,7 +62,7 @@ void main() {
     if (color_difference(color_center, color_right) > 0.001 ||
         color_difference(color_center, color_bot) > 0.001 ||
         color_difference(color_center, color_rb) > 0.001)
-        value = 0.0;
+        value = 0.999;
 
     // float d = get_dist_at(texture1, texel, 2);
     // float diff = d - depth;
