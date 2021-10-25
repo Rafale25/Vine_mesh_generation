@@ -97,7 +97,8 @@ class MyWindow(moderngl_window.WindowConfig):
                 self.load_program(
                     vertex_shader='./tree.vert',
                     geometry_shader='./tree.geom',
-                    fragment_shader='./tree.frag'),
+                    fragment_shader='./tree.frag',
+                    defines={'NB_SEGMENTS': Tree.NB_SEGMENTS}),
             'LINE':
                 self.load_program(
                     vertex_shader='./line.vert',
@@ -115,13 +116,14 @@ class MyWindow(moderngl_window.WindowConfig):
         }
 
         ## skeleton --
-        self.buffer_skeleton = self.ctx.buffer(reserve=48)
+        self.buffer_skeleton = self.ctx.buffer(reserve=12*6)
         self.tree.generate()
         self.update_tree_buffer()
 
 
         # self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES)
-        self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES_ADJACENCY)
+        # self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES_ADJACENCY)
+        self.vao_tree = VAO(name="skeleton", mode=moderngl.TRIANGLES_ADJACENCY)
         self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
         # --
 
@@ -154,15 +156,17 @@ class MyWindow(moderngl_window.WindowConfig):
 
     def gen_tree_skeleton(self):
         for node in self.tree.nodes:
+            # node
             yield node.pos_smooth.x
             yield node.pos_smooth.y
             yield node.pos_smooth.z
 
+            # node parent
             yield node.parent.pos_smooth.x
             yield node.parent.pos_smooth.y
             yield node.parent.pos_smooth.z
 
-            # parent of parent for bezier curve
+            # parent of parent for curve
             if node.parent.parent:
                 yield node.parent.parent.pos_smooth.x
                 yield node.parent.parent.pos_smooth.y
@@ -172,6 +176,7 @@ class MyWindow(moderngl_window.WindowConfig):
                 yield node.parent.pos_smooth.y
                 yield node.parent.pos_smooth.z
 
+            # node child for curve
             if len(node.childs) > 0:
                 yield node.childs[0].pos_smooth.x
                 yield node.childs[0].pos_smooth.y
@@ -181,10 +186,16 @@ class MyWindow(moderngl_window.WindowConfig):
                 yield node.pos_smooth.y
                 yield node.pos_smooth.z
 
+            yield node.radius
+            yield node.parent.radius
+            yield 0
+
+            yield 0
+            yield 0
+            yield 0
+
     def update_tree_buffer(self):
-        self.buffer_skeleton.orphan(self.tree.size() * 48)
-        # self.buffer_skeleton.orphan(self.tree.size() * 36)
-        # self.buffer_skeleton.orphan(self.tree.size() * 24)
+        self.buffer_skeleton.orphan(self.tree.size() * 12*6)
         data = array('f', self.gen_tree_skeleton())
         self.buffer_skeleton.write(data)
 
@@ -257,8 +268,8 @@ class MyWindow(moderngl_window.WindowConfig):
             with self.query:
                 self.vao_tree.render(
                     program=self.program['TREE'],
-                    vertices=self.tree.size() * 4,
-                    instances=8)
+                    vertices=self.tree.size() * 6,
+                    instances=Tree.NB_SEGMENTS)
             self.query_debug_values['first render'] = self.query.elapsed * 10e-7
         if self.draw_skeleton:
             self.vao_tree.render(program=self.program['LINE'], vertices=self.tree.size() * 4)
