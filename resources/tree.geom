@@ -1,8 +1,8 @@
 #version 440
 
-#define NB 8
+#define NB_FACES 8
 #define NB_SEGMENTS -1 // get changed when loaded
-#define NB_VERTICES (NB * 2*3)
+#define NB_VERTICES (NB_FACES * 2*3)
 
 // layout (lines_adjacency) in;
 layout (triangles_adjacency) in;
@@ -87,9 +87,9 @@ void output_segment(vec3 node1, vec3 node2, vec3 dir1, vec3 dir2, float radius) 
 
     mat4 mvp = projection * modelview;
 
-    for (int i = 0 ; i < NB ; ++i) {
-        float angle1 = (PI*2.0 / NB) * i;
-        float angle2 = (PI*2.0 / NB) * (i + 1);
+    for (int i = 0 ; i < NB_FACES ; ++i) {
+        float angle1 = (PI*2.0 / NB_FACES) * i;
+        float angle2 = (PI*2.0 / NB_FACES) * (i + 1);
 
         float x1 = cos(angle1) * radius;
         float z1 = sin(angle1) * radius;
@@ -238,7 +238,7 @@ void main() {
 1 - 3 - 5
 | \ | \ |
 0 - 2 - 4
-#indices for NB=3 ; GL_TRIANGLES
+#indices for NB_FACES=3 ; GL_TRIANGLES
 0 2 1
 1 2 3
 

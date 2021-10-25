@@ -10,7 +10,7 @@ class TreeNode:
         self.pos = glm.vec3(pos)
         self.pos_smooth = glm.vec3(pos)
 
-        self.radius = max(0.02, 0.3 - depth*0.01)
+        self.radius = max(0.02, 0.3 - depth*0.002)
         # self.radius = 0.15
         self.depth = depth #how many nodes from root
 
@@ -25,10 +25,12 @@ class TreeNode:
 
 class Tree:
     MAX_LEN = 2.0
-    MAX_DEPTH = 1
+    MAX_DEPTH = 20
+    MAX_DIVISION_DEPTH = 20
     MIN_CHILDS = 1
     MAX_CHILDS = 1
-    NB_SEGMENTS = 16
+    NB_SEGMENTS = 8
+    NB_FACES = 8
 
     def __init__(self):
         self.root = TreeNode(parent=None, pos=glm.vec3(0, 0, 0), depth=0)
@@ -37,18 +39,18 @@ class Tree:
     def __str__(self):
         return "\n".join(str(node) for node in self.nodes)
 
-    def _generate(self, parent, n, depth=0):
-        if n <= 0: return
-        nb_childs = random.randint(Tree.MIN_CHILDS, Tree.MAX_CHILDS)
-
-        for i in range(nb_childs):
-            offset = random_uniform_vec3()
-            offset.y = math.fabs(offset.y)
-            node = TreeNode(parent=parent, pos=parent.pos + offset, depth=depth+1)
-
-            self._generate(parent=node, n=n-1)
-            parent.childs.append(node)
-            self.nodes.append(node)
+    # def _generate(self, parent, n, depth=0):
+    #     if n <= 0: return
+    #     nb_childs = random.randint(Tree.MIN_CHILDS, Tree.MAX_CHILDS)
+    #
+    #     for i in range(nb_childs):
+    #         offset = random_uniform_vec3()
+    #         offset.y = math.fabs(offset.y)
+    #         node = TreeNode(parent=parent, pos=parent.pos + offset, depth=depth+1)
+    #
+    #         self._generate(parent=node, n=n-1)
+    #         parent.childs.append(node)
+    #         self.nodes.append(node)
 
     def size(self):
         return len(self.nodes)
@@ -56,14 +58,15 @@ class Tree:
     def clear(self):
         self.root = TreeNode(parent=None, pos=glm.vec3(0, 0, 0), depth=0)
         self.nodes = [] #[TreeNode]
+        self.nodes.append(TreeNode(parent=self.root, pos=glm.vec3(1, 1, 0), depth=1))
 
     def update(self):
         speed = 1.0
         for node in self.nodes:
-            node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * speed
-            node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * speed
-            # node.pos_smooth.x = node.pos.x
-            # node.pos_smooth.y = node.pos.y
+            # node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * speed
+            # node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * speed
+            node.pos_smooth.x = node.pos.x
+            node.pos_smooth.y = node.pos.y
 
     def grow(self):
         for node in self.nodes:
@@ -75,9 +78,10 @@ class Tree:
                 node.pos += dir * 0.2
             else:
                 nb_childs = random.randint(Tree.MIN_CHILDS, Tree.MAX_CHILDS)
-                if self.size() > 20:
+
+                if node.depth > Tree.MAX_DIVISION_DEPTH:
                     nb_childs = 1
-                if node.depth > 25:
+                if node.depth > Tree.MAX_DEPTH:
                     continue
 
                 offset = random_uniform_vec3() * 0.1
@@ -87,7 +91,3 @@ class Tree:
                     new_child_node = TreeNode(parent=node, pos=node.pos + offset, depth=node.depth+1)
                     node.childs.append(new_child_node)
                     self.nodes.append(new_child_node)
-
-    def generate(self):
-        self.clear()
-        self._generate(parent=self.root, n=Tree.MAX_DEPTH)

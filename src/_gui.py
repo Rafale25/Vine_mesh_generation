@@ -30,7 +30,12 @@ def imgui_newFrame(self, frametime):
         label="Max Depth",
         value=Tree.MAX_DEPTH,
         min_value=1,
-        max_value=14)
+        max_value=100)
+    c, Tree.MAX_DIVISION_DEPTH = imgui.slider_int(
+        label="Max division depth",
+        value=Tree.MAX_DIVISION_DEPTH,
+        min_value=1,
+        max_value=100)
     c, Tree.MIN_CHILDS = imgui.slider_int(
         label="Min childs",
         value=Tree.MIN_CHILDS,
@@ -43,9 +48,12 @@ def imgui_newFrame(self, frametime):
         max_value=4)
     imgui.end_group()
 
+    print(Tree.MAX_DEPTH)
+    print(Tree.MAX_DIVISION_DEPTH)
+
     imgui.spacing(); imgui.spacing()
     if imgui.button("regenerate"):
-        self.tree.generate()
+        self.tree.clear()
         self.update_tree_buffer()
     if imgui.button("grow"):
         self.tree.grow()

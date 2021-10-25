@@ -90,7 +90,6 @@ class MyWindow(moderngl_window.WindowConfig):
         self.projection = glm.perspective(self.camera.fov, self.wnd.aspect_ratio, self.camera.near, self.camera.far)
 
         self.tree = Tree()
-        self.tree.generate()
 
         self.program = {
             'TREE':
@@ -98,7 +97,9 @@ class MyWindow(moderngl_window.WindowConfig):
                     vertex_shader='./tree.vert',
                     geometry_shader='./tree.geom',
                     fragment_shader='./tree.frag',
-                    defines={'NB_SEGMENTS': Tree.NB_SEGMENTS}),
+                    defines={
+                        'NB_SEGMENTS': Tree.NB_SEGMENTS,
+                        'NB_FACES': Tree.NB_FACES}),
             'LINE':
                 self.load_program(
                     vertex_shader='./line.vert',
@@ -117,7 +118,7 @@ class MyWindow(moderngl_window.WindowConfig):
 
         ## skeleton --
         self.buffer_skeleton = self.ctx.buffer(reserve=12*6)
-        self.tree.generate()
+        self.tree.clear()
         self.update_tree_buffer()
 
 
@@ -289,14 +290,14 @@ class MyWindow(moderngl_window.WindowConfig):
 
         # problem, the previous texture depth are problematic
 
-        for node in self.tree.nodes:
-            self.debug_line(*node.pos.xyz, *node.parent.pos.xyz)
-
-        self.debug_line(0, 0, 0, 0.5, 0, 0)
-        self.debug_line(0, 0, 0, 0, 0.5, 0)
-        self.debug_line(0, 0, 0, 0, 0, 0.5)
-        self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
-        self.debug_draw()
+        # for node in self.tree.nodes:
+        #     self.debug_line(*node.pos.xyz, *node.parent.pos.xyz)
+        #
+        # self.debug_line(0, 0, 0, 0.5, 0, 0)
+        # self.debug_line(0, 0, 0, 0, 0.5, 0)
+        # self.debug_line(0, 0, 0, 0, 0, 0.5)
+        # self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
+        # self.debug_draw()
 
         ## draw debug textures--
         self.ctx.disable(moderngl.DEPTH_TEST)
