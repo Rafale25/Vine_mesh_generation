@@ -1,6 +1,6 @@
 #version 440
 
-#define NB 6
+#define NB 8
 #define NB_SEGMENTS -1 // get changed when loaded
 #define NB_VERTICES (NB * 2*3)
 
@@ -72,14 +72,18 @@ float rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-void output_segment(vec3 p1, vec3 p2, float radius) {
-    vec3 dir = normalize(p2 - p1);
-    float yaw = atan(dir.z, dir.x);
-    float pitch = atan(sqrt(dir.z * dir.z + dir.x * dir.x), dir.y) + PI;
+void output_segment(vec3 node1, vec3 node2, vec3 dir1, vec3 dir2, float radius) {
+    float yaw1 = atan(dir1.z, dir1.x);
+    float pitch1 = atan(sqrt(dir1.z * dir1.z + dir1.x * dir1.x), dir1.y) + PI;
 
-    mat4 rot = calcRotateMat4(vec3(0.0, yaw, pitch));
-    mat4 translate_node = calcTranslateMat4(p1);
-    mat4 translate_node_parent = calcTranslateMat4(p2);
+    float yaw2 = atan(dir2.z, dir2.x);
+    float pitch2 = atan(sqrt(dir2.z * dir2.z + dir2.x * dir2.x), dir2.y) + PI;
+
+    mat4 rot_node = calcRotateMat4(vec3(0.0, yaw1, pitch1));
+    mat4 rot_parent = calcRotateMat4(vec3(0.0, yaw2, pitch2));
+
+    mat4 translate_node = calcTranslateMat4(node1);
+    mat4 translate_node_parent = calcTranslateMat4(node2);
 
     mat4 mvp = projection * modelview;
 
@@ -97,36 +101,42 @@ void output_segment(vec3 p1, vec3 p2, float radius) {
         vec4 p2 = vec4(x2, 0.0, z2, 1.0);
 
         //triangle 1
-        vec4 a0 = translate_node * rot * p1;
-        vec4 a1 = translate_node_parent * rot * p1;
-        vec4 a2 = translate_node * rot * p2;
+        vec4 a0 = translate_node * rot_node * p1;
+        vec4 a1 = translate_node_parent * rot_parent * p1;
+        vec4 a2 = translate_node * rot_node * p2;
 
-        g_normal = triangle_normal(a0.xyz, a2.xyz, a1.xyz);
+        // g_normal = triangle_normal(a0.xyz, a2.xyz, a1.xyz);
 
         gl_Position = mvp * a0;
+        g_normal = (rot_node * p1).xyz;
         g_position = a0.xyz;
         EmitVertex();
         gl_Position = mvp * a2;
+        g_normal = (rot_node * p2).xyz;
         g_position = a2.xyz;
         EmitVertex();
         gl_Position = mvp * a1;
+        g_normal = (rot_parent * p1).xyz;
         g_position = a1.xyz;
         EmitVertex();
 
         //triangle 2
-        vec4 b1 = translate_node_parent * rot * p1;
-        vec4 b2 = translate_node * rot * p2;
-        vec4 b3 = translate_node_parent * rot * p2;
+        vec4 b1 = translate_node_parent * rot_parent * p1;
+        vec4 b2 = translate_node * rot_node * p2;
+        vec4 b3 = translate_node_parent * rot_parent * p2;
 
-        g_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz);
+        // g_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz);
 
         gl_Position = mvp * b1;
+        g_normal = (rot_parent * p1).xyz;
         g_position = b1.xyz;
         EmitVertex();
         gl_Position = mvp * b3;
+        g_normal = (rot_parent * p2).xyz;
         g_position = b3.xyz;
         EmitVertex();
         gl_Position = mvp * b2;
+        g_normal = (rot_node * p2).xyz;
         g_position = b2.xyz;
         EmitVertex();
 
@@ -164,6 +174,35 @@ vec3 getSplinePoint(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {
     return vec3(tx * 0.5, ty * 0.5, tz * 0.5);
 }
 
+vec3 getSplineGradient(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {
+    t = t - int(t);
+
+    float tt = t * t;
+    float ttt = tt * t;
+
+    float q1 = -3.0*tt + 4.0*t - 1.0;
+    float q2 = 9.0*tt - 10.0*t;
+    float q3 = -9.0*tt + 8.0*t + 1.0;
+    float q4 = 3.0*tt - 2.0*t;
+
+    float tx = p0.x * q1 +
+               p1.x * q2 +
+               p2.x * q3 +
+               p3.x * q4;
+
+    float ty = p0.y * q1 +
+               p1.y * q2 +
+               p2.y * q3 +
+               p3.y * q4;
+
+    float tz = p0.z * q1 +
+               p1.z * q2 +
+               p2.z * q3 +
+               p3.z * q4;
+
+    return vec3(tx * 0.5, ty * 0.5, tz * 0.5);
+}
+
 void main() {
     vec3 node = gl_in[0].gl_Position.xyz;
     vec3 node_parent = gl_in[1].gl_Position.xyz;
@@ -174,21 +213,25 @@ void main() {
     float node_radius = gl_in[4].gl_Position.x;
     float parent_radius = gl_in[4].gl_Position.y;
 
-    // vec3 dir = normalize(p1 - p2);
-    g_branch_color = hsv2rgb(vec3(rand(vec2(node.x, node.y)), 1.0, 1.0));
+    // g_branch_color = hsv2rgb(vec3(rand(vec2(node.x, node.y)), 1.0, 1.0));
 
     int i = gl_InvocationID.x;
 
-    float t1 = (1.0 / NB_SEGMENTS) * (i + 0);
-    float t2 = clamp((1.0 / NB_SEGMENTS) * (i + 1), 0.0, 0.999);
+    const float increment = 1.0 / NB_SEGMENTS;
+    float t1 = increment* (i + 0);
+    float t2 = clamp(increment * (i + 1), 0.0, 0.9999);
 
     vec3 p1 = getSplinePoint(parent_parent, node_parent, node, node_child, t1);
     vec3 p2 = getSplinePoint(parent_parent, node_parent, node, node_child, t2);
 
-    // g_branch_color = hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0));
+    vec3 p1_dir = getSplineGradient(parent_parent, node_parent, node, node_child, t1);
+    vec3 p2_dir = getSplineGradient(parent_parent, node_parent, node, node_child, t2);
+
+    vec3 dir = normalize(p1 - p2);
+    g_branch_color = hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0));
     float radius = mix(parent_radius, node_radius, t1);
 
-    output_segment(p1, p2, radius);
+    output_segment(p1, p2, p1_dir, p2_dir, radius);
 }
 
 /*

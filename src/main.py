@@ -288,6 +288,10 @@ class MyWindow(moderngl_window.WindowConfig):
         self.query_debug_values['second render'] = self.query.elapsed * 10e-7
 
         # problem, the previous texture depth are problematic
+
+        for node in self.tree.nodes:
+            self.debug_line(*node.pos.xyz, *node.parent.pos.xyz)
+
         self.debug_line(0, 0, 0, 0.5, 0, 0)
         self.debug_line(0, 0, 0, 0, 0.5, 0)
         self.debug_line(0, 0, 0, 0, 0, 0.5)
@@ -315,12 +319,15 @@ class MyWindow(moderngl_window.WindowConfig):
         print('Cleaning up ressources.')
         self.vao_tree.release()
 
-        # self.buffer_skeleton.release()
-        # self.buffer_mesh.release()
-        # self.depth_texture.release()
-        # self.offscreen.release()
-        # self.geometry_program.release()
-        # self.linearize_depth_program.release()
+        self.color_texture.release()
+        self.branch_color_texture.release()
+        self.depth_texture.release()
+        self.offscreen.release()
+
+        self.quad_screen.release()
+        self.quad_branch_color.release()
+        self.quad_color.release()
+        self.quad_depth.release()
 
         for str, program in self.program.items():
             program.release()
