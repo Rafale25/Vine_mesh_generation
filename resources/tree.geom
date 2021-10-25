@@ -1,6 +1,6 @@
 #version 440
 
-#define NB 32
+#define NB 6
 #define NB_SEGMENTS 8
 #define NB_VERTICES (NB * 2*3)
 
