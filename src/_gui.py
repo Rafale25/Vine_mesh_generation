@@ -48,9 +48,6 @@ def imgui_newFrame(self, frametime):
         max_value=4)
     imgui.end_group()
 
-    print(Tree.MAX_DEPTH)
-    print(Tree.MAX_DIVISION_DEPTH)
-
     imgui.spacing(); imgui.spacing()
     if imgui.button("regenerate"):
         self.tree.clear()

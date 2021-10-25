@@ -10,8 +10,8 @@ class TreeNode:
         self.pos = glm.vec3(pos)
         self.pos_smooth = glm.vec3(pos)
 
-        self.radius = max(0.02, 0.3 - depth*0.002)
-        # self.radius = 0.15
+        # self.radius = max(0.02, 0.3 - depth*0.002)
+        self.radius = 0.04
         self.depth = depth #how many nodes from root
 
         self.parent = parent
@@ -30,7 +30,7 @@ class Tree:
     MIN_CHILDS = 1
     MAX_CHILDS = 1
     NB_SEGMENTS = 1
-    NB_FACES = 6
+    NB_FACES = 8
 
     def __init__(self):
         self.root = TreeNode(parent=None, pos=glm.vec3(0, 0, 0), depth=0)
@@ -38,19 +38,6 @@ class Tree:
 
     def __str__(self):
         return "\n".join(str(node) for node in self.nodes)
-
-    # def _generate(self, parent, n, depth=0):
-    #     if n <= 0: return
-    #     nb_childs = random.randint(Tree.MIN_CHILDS, Tree.MAX_CHILDS)
-    #
-    #     for i in range(nb_childs):
-    #         offset = random_uniform_vec3()
-    #         offset.y = math.fabs(offset.y)
-    #         node = TreeNode(parent=parent, pos=parent.pos + offset, depth=depth+1)
-    #
-    #         self._generate(parent=node, n=n-1)
-    #         parent.childs.append(node)
-    #         self.nodes.append(node)
 
     def size(self):
         return len(self.nodes)

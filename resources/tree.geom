@@ -101,42 +101,50 @@ void output_segment(vec3 node1, vec3 node2, vec3 dir1, vec3 dir2, float radius) 
         vec4 p2 = vec4(x2, 0.0, z2, 1.0);
 
         //triangle 1
-        vec4 a0 = translate_node * rot_node * p1;
-        vec4 a1 = translate_node_parent * rot_parent * p1;
-        vec4 a2 = translate_node * rot_node * p2;
+        vec4 a0_r = rot_node * p1;
+        vec4 a1_r = rot_parent * p1;
+        vec4 a2_r = rot_node * p2;
+
+        vec4 a0 = translate_node * a0_r;
+        vec4 a1 = translate_node_parent * a1_r;
+        vec4 a2 = translate_node * a2_r;
 
         // g_normal = triangle_normal(a0.xyz, a2.xyz, a1.xyz);
 
         gl_Position = mvp * a0;
-        g_normal = (rot_node * p1).xyz;
+        g_normal = a0_r.xyz;
         g_position = a0.xyz;
         EmitVertex();
         gl_Position = mvp * a2;
-        g_normal = (rot_node * p2).xyz;
+        g_normal = a2_r.xyz;
         g_position = a2.xyz;
         EmitVertex();
         gl_Position = mvp * a1;
-        g_normal = (rot_parent * p1).xyz;
+        g_normal = a1_r.xyz;
         g_position = a1.xyz;
         EmitVertex();
 
         //triangle 2
-        vec4 b1 = translate_node_parent * rot_parent * p1;
-        vec4 b2 = translate_node * rot_node * p2;
-        vec4 b3 = translate_node_parent * rot_parent * p2;
+        vec4 b1_r = rot_parent * p1;
+        vec4 b2_r = rot_node * p2;
+        vec4 b3_r = rot_parent * p2;
+
+        vec4 b1 = translate_node_parent * b1_r;
+        vec4 b2 = translate_node * b2_r;
+        vec4 b3 = translate_node_parent * b3_r;
 
         // g_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz);
 
         gl_Position = mvp * b1;
-        g_normal = (rot_parent * p1).xyz;
+        g_normal = b1_r.xyz;
         g_position = b1.xyz;
         EmitVertex();
         gl_Position = mvp * b3;
-        g_normal = (rot_parent * p2).xyz;
+        g_normal = b3_r.xyz;
         g_position = b3.xyz;
         EmitVertex();
         gl_Position = mvp * b2;
-        g_normal = (rot_node * p2).xyz;
+        g_normal = b2_r.xyz;
         g_position = b2.xyz;
         EmitVertex();
 
@@ -229,9 +237,12 @@ void main() {
 
     vec3 dir = normalize(p1 - p2);
     g_branch_color = hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0));
+
     float radius = mix(parent_radius, node_radius, t1);
 
-    output_segment(p1, p2, p1_dir, p2_dir, radius);
+    vec3 dirr = normalize(node - node_parent);
+    // output_segment(p1, p2, p1_dir, p2_dir, radius);
+    output_segment(node, node_parent, dirr, dirr, radius);
 }
 
 /*

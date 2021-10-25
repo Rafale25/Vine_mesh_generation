@@ -124,8 +124,11 @@ class MyWindow(moderngl_window.WindowConfig):
 
         # self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES)
         # self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES_ADJACENCY)
-        self.vao_tree = VAO(name="skeleton", mode=moderngl.TRIANGLES_ADJACENCY)
+        self.vao_tree = VAO(name="mesh", mode=moderngl.TRIANGLES_ADJACENCY)
         self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
+
+        # self.vao_tree_skeleton = VAO(name="skeleton", mode=moderngl.LINES)
+        # self.vao_tree_skeleton.buffer(self.buffer_skeleton, '3f ', ['in_vert'])
         # --
 
         # depth --
@@ -290,17 +293,16 @@ class MyWindow(moderngl_window.WindowConfig):
 
         # problem, the previous texture depth are problematic
 
+        ## draw debugs--
+        self.ctx.disable(moderngl.DEPTH_TEST)
         for node in self.tree.nodes:
             self.debug_line(*node.pos.xyz, *node.parent.pos.xyz)
-        #
-        # self.debug_line(0, 0, 0, 0.5, 0, 0)
-        # self.debug_line(0, 0, 0, 0, 0.5, 0)
-        # self.debug_line(0, 0, 0, 0, 0, 0.5)
-        # self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
-        self.debug_draw()
 
-        ## draw debug textures--
-        self.ctx.disable(moderngl.DEPTH_TEST)
+        self.debug_line(0, 0, 0, 0.5, 0, 0)
+        self.debug_line(0, 0, 0, 0, 0.5, 0)
+        self.debug_line(0, 0, 0, 0, 0, 0.5)
+        self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
+        self.debug_draw()
 
         self.branch_color_texture.use(location=0)
         self.quad_branch_color.render(self.program['FRAMEBUFFER'])
