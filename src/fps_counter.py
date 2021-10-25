@@ -10,4 +10,7 @@ class FpsCounter:
         self.next_sample_indice = (self.next_sample_indice+1) % FpsCounter.NB_SAMPLE
 
     def get_fps(self):
-        return 1.0 / (sum(self.fps_data) / FpsCounter.NB_SAMPLE)
+        n = sum(self.fps_data) / FpsCounter.NB_SAMPLE
+        if n == 0.0:
+            return 0.0
+        return 1.0 / n
