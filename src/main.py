@@ -290,14 +290,14 @@ class MyWindow(moderngl_window.WindowConfig):
 
         # problem, the previous texture depth are problematic
 
-        # for node in self.tree.nodes:
-        #     self.debug_line(*node.pos.xyz, *node.parent.pos.xyz)
+        for node in self.tree.nodes:
+            self.debug_line(*node.pos.xyz, *node.parent.pos.xyz)
         #
         # self.debug_line(0, 0, 0, 0.5, 0, 0)
         # self.debug_line(0, 0, 0, 0, 0.5, 0)
         # self.debug_line(0, 0, 0, 0, 0, 0.5)
         # self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
-        # self.debug_draw()
+        self.debug_draw()
 
         ## draw debug textures--
         self.ctx.disable(moderngl.DEPTH_TEST)

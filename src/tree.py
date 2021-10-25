@@ -29,8 +29,8 @@ class Tree:
     MAX_DIVISION_DEPTH = 20
     MIN_CHILDS = 1
     MAX_CHILDS = 1
-    NB_SEGMENTS = 8
-    NB_FACES = 8
+    NB_SEGMENTS = 1
+    NB_FACES = 6
 
     def __init__(self):
         self.root = TreeNode(parent=None, pos=glm.vec3(0, 0, 0), depth=0)

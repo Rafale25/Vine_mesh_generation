@@ -12,7 +12,7 @@ def init_debug_draw(self):
 
     # change every time you draw something; is reset on draw
     self._debug_buffer_offset = 0
-    self._debug_buffer_size = 4096*4
+    self._debug_buffer_size = 4096*64
 
     self._debug_buffer = self.ctx.buffer(reserve=self._debug_buffer_size)
 
