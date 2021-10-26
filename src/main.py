@@ -343,6 +343,8 @@ class MyWindow(moderngl_window.WindowConfig):
         for str, program in self.program.items():
             program.release()
 
+        self._debug_vao.release()
+
     def __del__(self):
         self.cleanup()
 
