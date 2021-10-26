@@ -5,6 +5,7 @@ layout(location=1) out vec4 out_branch_color;
 
 in vec3 g_position;
 in vec3 g_normal;
+// in float g_normal;
 // in vec3 g_branch_color;
 flat in int g_branch_color;
 
@@ -32,8 +33,7 @@ vec4 permute(vec4 x) {
      return mod289(((x*34.0)+10.0)*x);
 }
 
-vec4 taylorInvSqrt(vec4 r)
-{
+vec4 taylorInvSqrt(vec4 r) {
   return 1.79284291400159 - 0.85373472095314 * r;
 }
 

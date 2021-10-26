@@ -10,7 +10,7 @@ class TreeNode:
         self.pos = glm.vec3(pos)
         self.pos_smooth = glm.vec3(pos)
 
-        self.radius = max(0.02, 0.2 - depth*0.003)
+        self.radius = max(0.02, 0.2 - depth*0.005)
         # self.radius = 0.04
         self.depth = depth #how many nodes from root
 

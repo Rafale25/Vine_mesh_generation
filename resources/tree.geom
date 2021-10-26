@@ -10,6 +10,7 @@ layout(invocations = NB_SEGMENTS) in;
 
 out vec3 g_position;
 out vec3 g_normal;
+// out float g_normal;
 // out vec3 g_branch_color;
 flat out int g_branch_color;
 
@@ -219,6 +220,18 @@ int packColor(vec3 color) {
     return int(r + g + b);
 }
 
+float pack2(vec2 v) {
+    vec2 p = v;
+    p.x = floor(p.x * (4096 - 1));
+    p.y = floor(p.y * (4096 - 1));
+
+    return (p.x * 4096) + p.y;
+}
+
+vec2 pack3(vec3 v) {
+    return vec2(pack2(v.xy), v.z);
+}
+
 void main() {
     vec3 node = gl_in[0].gl_Position.xyz;
     vec3 node_parent = gl_in[1].gl_Position.xyz;
@@ -252,6 +265,8 @@ void main() {
     output_segment(p1, p2, p1_dir, p2_dir, radius);
     // vec3 dirr = normalize(node - node_parent);
     // output_segment(node, node_parent, dirr, dirr, radius);
+
+    // vec3 a = vec3(hvec3(1, 1, 1));
 }
 
 /*

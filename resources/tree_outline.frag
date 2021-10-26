@@ -41,10 +41,6 @@ float get_dist_at(sampler2D tex, vec2 texel, float m) {
     return d;
 }
 
-float color_difference(vec3 c1, vec3 c2) {
-    return distance(c1, c2);
-}
-
 void main() {
     vec2 texel = gl_FragCoord.xy / resolution;
 
@@ -57,11 +53,11 @@ void main() {
     vec3 color_center = texture(texture2, texel).rgb;
     vec3 color_right = texture_at(texture2, texel, vec2(1, 0)).rgb;
     vec3 color_bot = texture_at(texture2, texel, vec2(0, 1)).rgb;
-    vec3 color_rb = texture_at(texture2, texel, vec2(1, 1)).rgb;
+    // vec3 color_rb = texture_at(texture2, texel, vec2(1, 1)).rgb;
 
-    if (color_difference(color_center, color_right) > 0.001 ||
-        color_difference(color_center, color_bot) > 0.001 ||
-        color_difference(color_center, color_rb) > 0.001)
+    if (distance(color_center, color_right) > 0.001 ||
+        distance(color_center, color_bot) > 0.001)
+        // color_difference(color_center, color_rb) > 0.001)
         value = 0.0;
 
     fragColor = vec4(color*value, 1.0);
