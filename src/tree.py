@@ -10,8 +10,8 @@ class TreeNode:
         self.pos = glm.vec3(pos)
         self.pos_smooth = glm.vec3(pos)
 
-        # self.radius = max(0.02, 0.3 - depth*0.002)
-        self.radius = 0.04
+        self.radius = max(0.02, 0.2 - depth*0.002)
+        # self.radius = 0.04
         self.depth = depth #how many nodes from root
 
         self.parent = parent
@@ -29,7 +29,7 @@ class Tree:
     MAX_DIVISION_DEPTH = 20
     MIN_CHILDS = 1
     MAX_CHILDS = 1
-    NB_SEGMENTS = 1
+    NB_SEGMENTS = 8
     NB_FACES = 8
 
     def __init__(self):
@@ -48,12 +48,9 @@ class Tree:
         self.nodes.append(TreeNode(parent=self.root, pos=glm.vec3(1, 1, 0), depth=1))
 
     def update(self):
-        speed = 1.0
+        speed = 0.05
         for node in self.nodes:
-            # node.pos_smooth.x = node.pos_smooth.x + (node.pos.x - node.pos_smooth.x) * speed
-            # node.pos_smooth.y = node.pos_smooth.y + (node.pos.y - node.pos_smooth.y) * speed
-            node.pos_smooth.x = node.pos.x
-            node.pos_smooth.y = node.pos.y
+            node.pos_smooth = node.pos_smooth + (node.pos - node.pos_smooth) * speed
 
     def grow(self):
         for node in self.nodes:
@@ -62,7 +59,7 @@ class Tree:
 
             if node.length() < Tree.MAX_LEN:
                 dir = glm.normalize(glm.sub(node.pos, node.parent.pos))
-                node.pos += dir * 0.2
+                node.pos += dir * 0.01
             else:
                 nb_childs = random.randint(Tree.MIN_CHILDS, Tree.MAX_CHILDS)
 

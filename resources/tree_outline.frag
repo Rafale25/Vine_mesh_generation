@@ -64,11 +64,6 @@ void main() {
         color_difference(color_center, color_rb) > 0.001)
         value = 0.999;
 
-    // float d = get_dist_at(texture1, texel, 2);
-    // float diff = d - depth;
-    // if (diff > 0.001)
-        // value = 0.0;
-
     fragColor = vec4(color*value, 1.0);
 }
 

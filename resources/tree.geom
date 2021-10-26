@@ -240,9 +240,9 @@ void main() {
 
     float radius = mix(parent_radius, node_radius, t1);
 
-    vec3 dirr = normalize(node - node_parent);
-    // output_segment(p1, p2, p1_dir, p2_dir, radius);
-    output_segment(node, node_parent, dirr, dirr, radius);
+    // vec3 dirr = normalize(node - node_parent);
+    output_segment(p1, p2, p1_dir, p2_dir, radius);
+    // output_segment(node, node_parent, dirr, dirr, radius);
 }
 
 /*
