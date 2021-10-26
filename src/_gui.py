@@ -13,12 +13,11 @@ def imgui_newFrame(self, frametime):
 
     imgui.spacing(); imgui.spacing()
 
-    c, self.ctx.wireframe = imgui.checkbox("Wireframe", self.ctx.wireframe)
+    c, self.wireframe = imgui.checkbox("Wireframe", self.wireframe)
     c, self.cull_face = imgui.checkbox("Cull Face", self.cull_face)
 
     c, self.draw_mesh = imgui.checkbox("mesh", self.draw_mesh)
-    c, self.draw_skeleton = imgui.checkbox("skeleton", self.draw_skeleton)
-    # c, self.draw_normals = imgui.checkbox("normals", self.draw_normals)
+    c, self.debug_active = imgui.checkbox("debug", self.debug_active)
 
     c, self.isGrowing = imgui.checkbox("isGrowing", self.isGrowing)
     c, self.updateTreeAndBuffer = imgui.checkbox("updateTreeAndBuffer", self.updateTreeAndBuffer)
@@ -30,7 +29,7 @@ def imgui_newFrame(self, frametime):
         label="Max Depth",
         value=Tree.MAX_DEPTH,
         min_value=1,
-        max_value=100)
+        max_value=1000)
     c, Tree.MAX_DIVISION_DEPTH = imgui.slider_int(
         label="Max division depth",
         value=Tree.MAX_DIVISION_DEPTH,
@@ -46,6 +45,11 @@ def imgui_newFrame(self, frametime):
         value=Tree.MAX_CHILDS,
         min_value=1,
         max_value=4)
+    c, Tree.GROW_SPEED = imgui.slider_float(
+        label="grow speed",
+        value=Tree.GROW_SPEED,
+        min_value=0.001,
+        max_value=0.5)
     imgui.end_group()
 
     imgui.spacing(); imgui.spacing()
@@ -55,6 +59,9 @@ def imgui_newFrame(self, frametime):
     if imgui.button("grow"):
         self.tree.grow()
         self.update_tree_buffer()
+
+    if imgui.button("print"):
+        print(self.tree.nodes[0])
 
     c, self.color1 = imgui.color_edit3(
         "color 1", *self.color1

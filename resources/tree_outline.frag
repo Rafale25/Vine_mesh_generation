@@ -62,18 +62,7 @@ void main() {
     if (color_difference(color_center, color_right) > 0.001 ||
         color_difference(color_center, color_bot) > 0.001 ||
         color_difference(color_center, color_rb) > 0.001)
-        value = 0.999;
+        value = 0.0;
 
     fragColor = vec4(color*value, 1.0);
 }
-
-// if (intensity > 0.95)
-//     value = 1.0;
-// else if (intensity > 0.75)
-//     value = 0.8;
-// else if (intensity > 0.50)
-//     value = 0.6;
-// else if (intensity > 0.25)
-//     value = 0.4;
-// else
-//     value = 0.2;

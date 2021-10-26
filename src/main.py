@@ -73,8 +73,9 @@ class MyWindow(moderngl_window.WindowConfig):
 
         self.wireframe = False
         self.cull_face = True
-        self.draw_skeleton = False
+        # self.draw_skeleton = False
         self.draw_mesh = True
+        self.debug_active = False
         # self.draw_normals = False
 
         self.isGrowing = False
@@ -90,6 +91,8 @@ class MyWindow(moderngl_window.WindowConfig):
         self.projection = glm.perspective(self.camera.fov, self.wnd.aspect_ratio, self.camera.near, self.camera.far)
 
         self.tree = Tree()
+
+        self.query = self.ctx.query(samples=False, time=True)
 
         self.program = {
             'TREE':
@@ -148,15 +151,13 @@ class MyWindow(moderngl_window.WindowConfig):
             depth_attachment=self.depth_texture,
         )
 
-        self.depth_sampler = self.ctx.sampler(
-            filter=(moderngl.LINEAR, moderngl.LINEAR),
-            compare_func='',
-        )
+        # self.depth_sampler = self.ctx.sampler(
+        #     filter=(moderngl.LINEAR, moderngl.LINEAR),
+        #     compare_func='',
+        # )
         # --
 
         self.init_debug_draw()
-
-        self.query = self.ctx.query(samples=False, time=True)
 
     def gen_tree_skeleton(self):
         for node in self.tree.nodes:
@@ -263,7 +264,10 @@ class MyWindow(moderngl_window.WindowConfig):
     def render(self, time_since_start, frametime):
         self.update(time_since_start, frametime)
 
+
+
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
+        self.ctx.wireframe = self.wireframe
 
         self.offscreen.clear(0.2, 0.2, 0.2)
         self.offscreen.use()
@@ -275,8 +279,8 @@ class MyWindow(moderngl_window.WindowConfig):
                     vertices=self.tree.size() * 6,
                     instances=Tree.NB_SEGMENTS)
             self.query_debug_values['first render'] = self.query.elapsed * 10e-7
-        if self.draw_skeleton:
-            self.vao_tree.render(program=self.program['LINE'], vertices=self.tree.size() * 4)
+        # if self.draw_skeleton:
+        #     self.vao_tree.render(program=self.program['LINE'], vertices=self.tree.size() * 4)
         # if self.draw_normals:
             # self.vao_mesh.render(program=self.program['TREE_NORMAL'])
 
@@ -287,22 +291,26 @@ class MyWindow(moderngl_window.WindowConfig):
         self.depth_texture.use(location=1)
         self.branch_color_texture.use(location=2)
 
+        self.ctx.wireframe = False
+
         with self.query:
             self.quad_screen.render(self.program['TREE_OUTLINE'])
         self.query_debug_values['second render'] = self.query.elapsed * 10e-7
 
-        # problem, the previous texture depth are problematic
+        # BUG: the previous texture depth are problematic
 
         ## draw debugs--
         self.ctx.disable(moderngl.DEPTH_TEST)
-        # for node in self.tree.nodes:
-        #     self.debug_line(*node.pos.xyz, *node.parent.pos.xyz)
 
-        # self.debug_line(0, 0, 0, 0.5, 0, 0)
-        # self.debug_line(0, 0, 0, 0, 0.5, 0)
-        # self.debug_line(0, 0, 0, 0, 0, 0.5)
-        # self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
-        # self.debug_draw()
+        if self.debug_active:
+            for node in self.tree.nodes:
+                self.debug_line(*node.pos.xyz, *node.parent.pos.xyz)
+
+            self.debug_line(0, 0, 0, 0.5, 0, 0)
+            self.debug_line(0, 0, 0, 0, 0.5, 0)
+            self.debug_line(0, 0, 0, 0, 0, 0.5)
+            self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
+            self.debug_draw()
 
         self.branch_color_texture.use(location=0)
         self.quad_branch_color.render(self.program['FRAMEBUFFER'])

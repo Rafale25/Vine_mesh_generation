@@ -1,17 +1,17 @@
 #version 440
 
-#define NB_FACES 8
+#define NB_FACES -1 // get changed when loaded
 #define NB_SEGMENTS -1 // get changed when loaded
 #define NB_VERTICES (NB_FACES * 2*3)
 
-// layout (lines_adjacency) in;
 layout (triangles_adjacency) in;
 layout (triangle_strip, max_vertices = NB_VERTICES) out;
 layout(invocations = NB_SEGMENTS) in;
 
 out vec3 g_position;
 out vec3 g_normal;
-out vec3 g_branch_color;
+// out vec3 g_branch_color;
+flat out int g_branch_color;
 
 uniform mat4 modelview;
 uniform mat4 projection;
@@ -179,7 +179,7 @@ vec3 getSplinePoint(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {
                p2.z * q3 +
                p3.z * q4;
 
-    return vec3(tx * 0.5, ty * 0.5, tz * 0.5);
+    return vec3(tx, ty, tz) * 0.5;
 }
 
 vec3 getSplineGradient(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {
@@ -208,7 +208,15 @@ vec3 getSplineGradient(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {
                p2.z * q3 +
                p3.z * q4;
 
-    return vec3(tx * 0.5, ty * 0.5, tz * 0.5);
+    return vec3(tx, ty, tz) * 0.5;
+}
+
+int packColor(vec3 color) {
+    int r = 65536 * int(color.r*255);
+    int g = 256 * int(color.g*255);
+    int b = int(color.b*255);
+
+    return int(r + g + b);
 }
 
 void main() {
@@ -236,12 +244,13 @@ void main() {
     vec3 p2_dir = getSplineGradient(parent_parent, node_parent, node, node_child, t2);
 
     vec3 dir = normalize(p1 - p2);
-    g_branch_color = hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0));
+    // g_branch_color = hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0));
+    g_branch_color = packColor(hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0)));
 
     float radius = mix(parent_radius, node_radius, t1);
 
-    // vec3 dirr = normalize(node - node_parent);
     output_segment(p1, p2, p1_dir, p2_dir, radius);
+    // vec3 dirr = normalize(node - node_parent);
     // output_segment(node, node_parent, dirr, dirr, radius);
 }
 
