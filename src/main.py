@@ -191,8 +191,8 @@ class MyWindow(moderngl_window.WindowConfig):
                 yield node.pos_smooth.y
                 yield node.pos_smooth.z
 
-            yield node.radius
             yield node.parent.radius
+            yield node.radius
             yield 0
 
             yield 0
@@ -223,6 +223,9 @@ class MyWindow(moderngl_window.WindowConfig):
         # self.program['TREE_OUTLINE']['texture1'].value = 1
         self.program['TREE_OUTLINE']['texture2'].value = 2
         self.program['TREE_OUTLINE']['resolution'].write(glm.vec2(self.width, self.height))
+        self.program['TREE_OUTLINE']['outline_visibility'].value = 1.0-Tree.OUTLINE_VISIBILITY
+        self.program['TREE_OUTLINE']['outline_thickness'].value = Tree.OUTLINE_THICKNESS
+
         # self.program['TREE_OUTLINE']['near'].value = self.camera.near
         # self.program['TREE_OUTLINE']['far'].value = self.camera.far
 

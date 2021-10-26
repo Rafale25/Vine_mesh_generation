@@ -1,7 +1,10 @@
 #version 440
 
+#define PI 3.1415926538
+
 #define NB_FACES -1 // get changed when loaded
 #define NB_SEGMENTS -1 // get changed when loaded
+#define CYLINDER_INCREMENT (PI*2.0 / NB_FACES)
 #define NB_VERTICES (NB_FACES * 2*3)
 
 layout (triangles_adjacency) in;
@@ -10,14 +13,10 @@ layout(invocations = NB_SEGMENTS) in;
 
 out vec3 g_position;
 out vec3 g_normal;
-// out float g_normal;
-// out vec3 g_branch_color;
 flat out int g_branch_color;
 
 uniform mat4 modelview;
 uniform mat4 projection;
-
-#define PI 3.1415926538
 
 mat4 calcRotateMat4X(float radian) {
     return mat4(
@@ -73,12 +72,15 @@ float rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-void output_segment(vec3 node1, vec3 node2, vec3 dir1, vec3 dir2, float radius) {
+void output_segment(vec3 node1, vec3 node2, vec3 dir1, vec3 dir2, float radius1, float radius2) {
     float yaw1 = atan(dir1.z, dir1.x);
     float pitch1 = atan(sqrt(dir1.z * dir1.z + dir1.x * dir1.x), dir1.y) + PI;
 
     float yaw2 = atan(dir2.z, dir2.x);
     float pitch2 = atan(sqrt(dir2.z * dir2.z + dir2.x * dir2.x), dir2.y) + PI;
+
+    // mat4 ror_reverse = calcRotateMat4Y(PI);
+    // mat4 rot_node = calcRotateMat4(vec3(0.0, yaw1, pitch1)) * ror_reverse;
 
     mat4 rot_node = calcRotateMat4(vec3(0.0, yaw1, pitch1));
     mat4 rot_parent = calcRotateMat4(vec3(0.0, yaw2, pitch2));
@@ -89,22 +91,28 @@ void output_segment(vec3 node1, vec3 node2, vec3 dir1, vec3 dir2, float radius) 
     mat4 mvp = projection * modelview;
 
     for (int i = 0 ; i < NB_FACES ; ++i) {
-        float angle1 = (PI*2.0 / NB_FACES) * i;
-        float angle2 = (PI*2.0 / NB_FACES) * (i + 1);
+        const float angle1 = CYLINDER_INCREMENT * i;
+        const float angle2 = CYLINDER_INCREMENT * (i + 1);
 
-        float x1 = cos(angle1) * radius;
-        float z1 = sin(angle1) * radius;
+        float x1 = cos(angle1);
+        float z1 = sin(angle1);
 
-        float x2 = cos(angle2) * radius;
-        float z2 = sin(angle2) * radius;
+        float x2 = cos(angle2);
+        float z2 = sin(angle2);
 
-        vec4 p1 = vec4(x1, 0.0, z1, 1.0);
-        vec4 p2 = vec4(x2, 0.0, z2, 1.0);
+        const vec3 p1 = vec3(x1, 0.0, z1);
+        const vec3 p2 = vec3(x2, 0.0, z2);
+
+        vec4 p1_node = vec4(p1 * radius1, 1.0);
+        vec4 p1_parent = vec4(p1 * radius2, 1.0);
+
+        vec4 p2_node = vec4(p2 * radius1, 1.0);
+        vec4 p2_parent = vec4(p2 * radius2, 1.0);
 
         //triangle 1
-        vec4 a0_r = rot_node * p1;
-        vec4 a1_r = rot_parent * p1;
-        vec4 a2_r = rot_node * p2;
+        vec4 a0_r = rot_node * p1_node;
+        vec4 a1_r = rot_parent * p1_parent;
+        vec4 a2_r = rot_node * p2_node;
 
         vec4 a0 = translate_node * a0_r;
         vec4 a1 = translate_node_parent * a1_r;
@@ -126,9 +134,9 @@ void output_segment(vec3 node1, vec3 node2, vec3 dir1, vec3 dir2, float radius) 
         EmitVertex();
 
         //triangle 2
-        vec4 b1_r = rot_parent * p1;
-        vec4 b2_r = rot_node * p2;
-        vec4 b3_r = rot_parent * p2;
+        vec4 b1_r = rot_parent * p1_parent;
+        vec4 b2_r = rot_node * p2_node;
+        vec4 b3_r = rot_parent * p2_parent;
 
         vec4 b1 = translate_node_parent * b1_r;
         vec4 b2 = translate_node * b2_r;
@@ -220,18 +228,6 @@ int packColor(vec3 color) {
     return int(r + g + b);
 }
 
-float pack2(vec2 v) {
-    vec2 p = v;
-    p.x = floor(p.x * (4096 - 1));
-    p.y = floor(p.y * (4096 - 1));
-
-    return (p.x * 4096) + p.y;
-}
-
-vec2 pack3(vec3 v) {
-    return vec2(pack2(v.xy), v.z);
-}
-
 void main() {
     vec3 node = gl_in[0].gl_Position.xyz;
     vec3 node_parent = gl_in[1].gl_Position.xyz;
@@ -239,15 +235,15 @@ void main() {
     vec3 parent_parent = gl_in[2].gl_Position.xyz;
     vec3 node_child = gl_in[3].gl_Position.xyz;
 
-    float node_radius = gl_in[4].gl_Position.x;
-    float parent_radius = gl_in[4].gl_Position.y;
+    float parent_radius = gl_in[4].gl_Position.x;
+    float node_radius = gl_in[4].gl_Position.y;
 
     // g_branch_color = hsv2rgb(vec3(rand(vec2(node.x, node.y)), 1.0, 1.0));
 
     int i = gl_InvocationID.x;
 
     const float increment = 1.0 / NB_SEGMENTS;
-    float t1 = increment* (i + 0);
+    float t1 = increment * i;
     float t2 = clamp(increment * (i + 1), 0.0, 0.9999);
 
     vec3 p1 = getSplinePoint(parent_parent, node_parent, node, node_child, t1);
@@ -260,13 +256,10 @@ void main() {
     // g_branch_color = hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0));
     g_branch_color = packColor(hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0)));
 
-    float radius = mix(parent_radius, node_radius, t1);
+    float radius1 = mix(parent_radius, node_radius, t1);
+    float radius2 = mix(parent_radius, node_radius, t2);
 
-    output_segment(p1, p2, p1_dir, p2_dir, radius);
-    // vec3 dirr = normalize(node - node_parent);
-    // output_segment(node, node_parent, dirr, dirr, radius);
-
-    // vec3 a = vec3(hvec3(1, 1, 1));
+    output_segment(p1, p2, p1_dir, p2_dir, radius1, radius2);
 }
 
 /*

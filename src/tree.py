@@ -6,12 +6,12 @@ import glm
 from utils import *
 
 class TreeNode:
-    def __init__(self, parent, pos, depth):
+    def __init__(self, parent, pos, depth, radius=0.04):
         self.pos = glm.vec3(pos)
         self.pos_smooth = glm.vec3(pos)
 
-        self.radius = max(0.02, 0.2 - depth*0.005)
-        # self.radius = 0.04
+        # self.radius = max(0.02, 0.2 - depth*0.005)
+        self.radius = radius
         self.depth = depth #how many nodes from root
 
         self.parent = parent
@@ -34,6 +34,10 @@ class Tree:
     MIN_CHILDS = 1
     MAX_CHILDS = 1
     GROW_SPEED = 0.1
+    OUTLINE_VISIBILITY = 1.0
+    OUTLINE_THICKNESS = 1
+
+    # CAN NOT BE CHANGED AT RUNTIME
     NB_SEGMENTS = 8
     NB_FACES = 8
 
@@ -57,7 +61,15 @@ class Tree:
 
     def update(self):
         speed = 0.05
+        highest_depth = self.nodes[-1].depth
+
+        START_RADIUS = 0.03
+        RADIUS_STEP = 0.015
+        BIGGEST_RADIUS = RADIUS_STEP * highest_depth
+
+        self.root.radius = START_RADIUS + BIGGEST_RADIUS
         for node in self.nodes:
+            node.radius = START_RADIUS + BIGGEST_RADIUS - fclamp(node.depth * 0.02, 0.0, BIGGEST_RADIUS)
             # node.pos_smooth = node.pos_smooth + (node.pos - node.pos_smooth) * speed
             node.pos_smooth = glm.vec3(node.pos)
 
@@ -79,8 +91,9 @@ class Tree:
                 for i in range(nb_childs):
                     # dir = glm.normalize(glm.sub(node.pos, node.parent.pos))
                     offset = random_uniform_vec3() * 0.05
-                    # offset.y = math.fabs(offset.y)
-                    offset += node.dir() * 0.03
+                    offset.y = math.fabs(offset.y)
+                    # offset += node.dir() * 0.035
+                    # offset += node.dir() * 0.045
 
                     new_child_node = TreeNode(parent=node, pos=node.pos + offset, depth=node.depth+1)
                     node.childs.append(new_child_node)

@@ -119,6 +119,8 @@ void main() {
         value = 1.0;
     else
         value = 0.4;
+    // value = value*0.001 + intensity;
+
 
     // for adding noise to the color
     float noise_value = map(snoise(g_position*2.0), 0.0, 1.0, 0.2, 1.0);

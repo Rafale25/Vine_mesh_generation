@@ -50,7 +50,18 @@ def imgui_newFrame(self, frametime):
         value=Tree.GROW_SPEED,
         min_value=0.001,
         max_value=0.5)
+    c, Tree.OUTLINE_VISIBILITY = imgui.slider_float(
+        label="outline visibility",
+        value=Tree.OUTLINE_VISIBILITY,
+        min_value=0.0,
+        max_value=1.0)
+    c, Tree.OUTLINE_THICKNESS = imgui.slider_int(
+        label="outline thickness",
+        value=Tree.OUTLINE_THICKNESS,
+        min_value=1,
+        max_value=3)
     imgui.end_group()
+
 
     imgui.spacing(); imgui.spacing()
     if imgui.button("regenerate"):

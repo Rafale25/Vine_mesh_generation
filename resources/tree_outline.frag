@@ -5,6 +5,9 @@ out vec4 fragColor;
 uniform vec3 lightPosition;
 uniform vec2 resolution;
 
+uniform float outline_visibility;
+uniform int outline_thickness;
+
 uniform float near;
 uniform float far;
 
@@ -51,14 +54,14 @@ void main() {
 
     // branch color; for outline
     vec3 color_center = texture(texture2, texel).rgb;
-    vec3 color_right = texture_at(texture2, texel, vec2(1, 0)).rgb;
-    vec3 color_bot = texture_at(texture2, texel, vec2(0, 1)).rgb;
+    vec3 color_right = texture_at(texture2, texel, vec2(outline_thickness, 0)).rgb;
+    vec3 color_bot = texture_at(texture2, texel, vec2(0, outline_thickness)).rgb;
     // vec3 color_rb = texture_at(texture2, texel, vec2(1, 1)).rgb;
 
     if (distance(color_center, color_right) > 0.001 ||
         distance(color_center, color_bot) > 0.001)
         // color_difference(color_center, color_rb) > 0.001)
-        value = 0.0;
+        value = outline_visibility;
 
     fragColor = vec4(color*value, 1.0);
 }
