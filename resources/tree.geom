@@ -237,6 +237,7 @@ void main() {
 
     float parent_radius = gl_in[4].gl_Position.x;
     float node_radius = gl_in[4].gl_Position.y;
+    float body_id = gl_in[4].gl_Position.z;
 
     // g_branch_color = hsv2rgb(vec3(rand(vec2(node.x, node.y)), 1.0, 1.0));
 
@@ -252,9 +253,10 @@ void main() {
     vec3 p1_dir = getSplineGradient(parent_parent, node_parent, node, node_child, t1);
     vec3 p2_dir = getSplineGradient(parent_parent, node_parent, node, node_child, t2);
 
-    vec3 dir = normalize(p1 - p2);
-    // g_branch_color = hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0));
-    g_branch_color = packColor(hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0)));
+    // vec3 dir = normalize(p1 - p2);
+    // g_branch_color = packColor(hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0)));
+    // g_branch_color = packColor(hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0)));
+    g_branch_color = packColor(hsv2rgb(vec3( body_id*74.24982, 1.0, 1.0)));
 
     float radius1 = mix(parent_radius, node_radius, t1);
     float radius2 = mix(parent_radius, node_radius, t2);

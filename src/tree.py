@@ -6,13 +6,16 @@ import glm
 from utils import *
 
 class TreeNode:
-    def __init__(self, parent, pos, depth, radius=0.04):
+    ID = 0
+
+    def __init__(self, parent, pos, depth, radius=0.04, body_id=0):
         self.pos = glm.vec3(pos)
         self.pos_smooth = glm.vec3(pos)
 
         # self.radius = max(0.02, 0.2 - depth*0.005)
         self.radius = radius
         self.depth = depth #how many nodes from root
+        self.body_id = body_id
 
         self.parent = parent
         self.childs = []
@@ -89,12 +92,17 @@ class Tree:
                     continue
 
                 for i in range(nb_childs):
+
                     # dir = glm.normalize(glm.sub(node.pos, node.parent.pos))
                     offset = random_uniform_vec3() * 0.05
                     offset.y = math.fabs(offset.y)
                     # offset += node.dir() * 0.035
                     # offset += node.dir() * 0.045
 
-                    new_child_node = TreeNode(parent=node, pos=node.pos + offset, depth=node.depth+1)
+                    new_child_node = TreeNode(parent=node, pos=node.pos + offset, depth=node.depth+1, body_id=node.body_id)
+                    if nb_childs > 1:
+                        TreeNode.ID += 1
+                        new_child_node.body_id = TreeNode.ID
+
                     node.childs.append(new_child_node)
                     self.nodes.append(new_child_node)

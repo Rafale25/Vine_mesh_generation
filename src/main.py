@@ -193,7 +193,7 @@ class MyWindow(moderngl_window.WindowConfig):
 
             yield node.parent.radius
             yield node.radius
-            yield 0
+            yield node.body_id
 
             yield 0
             yield 0
