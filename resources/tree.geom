@@ -9,7 +9,7 @@
 
 layout (triangles_adjacency) in;
 layout (triangle_strip, max_vertices = NB_VERTICES) out;
-layout(invocations = NB_SEGMENTS) in;
+layout (invocations = NB_SEGMENTS) in;
 
 out vec3 g_position;
 out vec3 g_normal;
@@ -239,8 +239,6 @@ void main() {
     float node_radius = gl_in[4].gl_Position.y;
     float body_id = gl_in[4].gl_Position.z;
 
-    // g_branch_color = hsv2rgb(vec3(rand(vec2(node.x, node.y)), 1.0, 1.0));
-
     int i = gl_InvocationID.x;
 
     const float increment = 1.0 / NB_SEGMENTS;
@@ -254,7 +252,6 @@ void main() {
     vec3 p2_dir = getSplineGradient(parent_parent, node_parent, node, node_child, t2);
 
     // vec3 dir = normalize(p1 - p2);
-    // g_branch_color = packColor(hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0)));
     // g_branch_color = packColor(hsv2rgb(vec3( rand(vec2(dir)), 1.0, 1.0)));
     g_branch_color = packColor(hsv2rgb(vec3( body_id*74.24982, 1.0, 1.0)));
 

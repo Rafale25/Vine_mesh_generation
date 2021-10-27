@@ -1,11 +1,12 @@
 #version 430
 
+#define PI 3.1415926538
+
 layout(location=0) out vec4 out_color;
 layout(location=1) out vec4 out_branch_color;
 
 in vec3 g_position;
 in vec3 g_normal;
-// in float g_normal;
 // in vec3 g_branch_color;
 flat in int g_branch_color;
 
@@ -112,6 +113,8 @@ vec3 unpackColor(int rgb) {
 }
 
 void main() {
+
+
     float intensity = dot(normalize(lightPosition), normalize(g_normal));
 
     float value = intensity;
@@ -121,14 +124,11 @@ void main() {
         value = 0.4;
     // value = value*0.001 + intensity;
 
-
     // for adding noise to the color
     float noise_value = map(snoise(g_position*2.0), 0.0, 1.0, 0.2, 1.0);
     vec3 c = color1 + (color2 * noise_value);
 
-    vec3 branch_color = unpackColor(g_branch_color);
-
     // out_branch_color = vec4(g_branch_color, 1.0);
-    out_branch_color = vec4(branch_color, 1.0);
+    out_branch_color = vec4(unpackColor(g_branch_color), 1.0);
     out_color = vec4(c*value, 1.0);
 }

@@ -63,6 +63,8 @@ class Tree:
         self.nodes.append(first_node)
 
     def update(self):
+        Tree.MAX_CHILDS = max(Tree.MAX_CHILDS, Tree.MIN_CHILDS)
+
         speed = 0.05
         highest_depth = self.nodes[-1].depth
 
