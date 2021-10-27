@@ -12,8 +12,12 @@ class TreeNode:
         self.pos = glm.vec3(pos)
         self.pos_smooth = glm.vec3(pos)
 
+        self.vel = glm.vec3(0, 0, 0);
+
         # self.radius = max(0.02, 0.2 - depth*0.005)
         self.radius = radius
+        self.radius_smooth = radius
+
         self.depth = depth #how many nodes from root
         self.body_id = body_id
 
@@ -62,21 +66,32 @@ class Tree:
         self.root.childs.append(first_node)
         self.nodes.append(first_node)
 
-    def update(self):
+    def update(self, camera_pos):
         Tree.MAX_CHILDS = max(Tree.MAX_CHILDS, Tree.MIN_CHILDS)
 
-        speed = 0.05
+        speed = 0.08
         highest_depth = self.nodes[-1].depth
 
-        START_RADIUS = 0.03
+        START_RADIUS = 0.05
         RADIUS_STEP = 0.015
         BIGGEST_RADIUS = RADIUS_STEP * highest_depth
 
         self.root.radius = START_RADIUS + BIGGEST_RADIUS
         for node in self.nodes:
             node.radius = START_RADIUS + BIGGEST_RADIUS - fclamp(node.depth * 0.02, 0.0, BIGGEST_RADIUS)
+            node.radius = fclamp(node.radius, 0.0, 0.6)
+            node.radius_smooth = node.radius_smooth + (node.radius - node.radius_smooth) * speed
+
             # node.pos_smooth = node.pos_smooth + (node.pos - node.pos_smooth) * speed
+            # node.vel *= 0.97;
+            # node.pos += node.vel
             node.pos_smooth = glm.vec3(node.pos)
+
+            # dst = glm.distance(camera_pos, node.pos)
+            # if (dst < 3.0):
+            #     dir = node.pos - camera_pos
+            #     node.vel += dir * (3.0-dst) * 0.01;
+
 
     def grow(self):
         for node in self.nodes:

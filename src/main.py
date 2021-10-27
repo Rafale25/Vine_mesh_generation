@@ -103,6 +103,17 @@ class MyWindow(moderngl_window.WindowConfig):
                     defines={
                         'NB_SEGMENTS': Tree.NB_SEGMENTS,
                         'NB_FACES': Tree.NB_FACES}),
+            # 'TREE_TRANSFORM':
+            #     self.load_program(
+            #         vertex_shader='./tree.vert',
+            #         geometry_shader='./tree.geom',
+            #         defines={
+            #             'NB_SEGMENTS': Tree.NB_SEGMENTS,
+            #             'NB_FACES': Tree.NB_FACES}),
+            # 'TREE_FROM_BUFFER':
+            #     self.load_program(
+            #         vertex_shader='./tree_from_buffer.vert',
+            #         fragment_shader='./tree_from_buffer.frag'),
             'LINE':
                 self.load_program(
                     vertex_shader='./line.vert',
@@ -124,11 +135,18 @@ class MyWindow(moderngl_window.WindowConfig):
         self.tree.clear()
         self.update_tree_buffer()
 
+        # saved GS output by transform feedback
+        self.buffer_mesh_tf = self.ctx.buffer(reserve=40)
 
         # self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES)
         # self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES_ADJACENCY)
         self.vao_tree = VAO(name="mesh", mode=moderngl.TRIANGLES_ADJACENCY)
         self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
+
+        self.vao_tree_from_buffer = VAO(name="mesh_buffer", mode=moderngl.TRIANGLES_ADJACENCY)
+        self.vao_tree_from_buffer.buffer(self.buffer_mesh_tf,
+            '3f 3f 3f 1i', ['in_glPos', 'in_pos', 'in_normal', 'in_branch_color'])
+
 
         # self.vao_tree_skeleton = VAO(name="skeleton", mode=moderngl.LINES)
         # self.vao_tree_skeleton.buffer(self.buffer_skeleton, '3f ', ['in_vert'])
@@ -150,12 +168,6 @@ class MyWindow(moderngl_window.WindowConfig):
             ],
             depth_attachment=self.depth_texture,
         )
-
-        # self.depth_sampler = self.ctx.sampler(
-        #     filter=(moderngl.LINEAR, moderngl.LINEAR),
-        #     compare_func='',
-        # )
-        # --
 
         self.init_debug_draw()
 
@@ -191,8 +203,8 @@ class MyWindow(moderngl_window.WindowConfig):
                 yield node.pos_smooth.y
                 yield node.pos_smooth.z
 
-            yield node.parent.radius
-            yield node.radius
+            yield node.parent.radius_smooth
+            yield node.radius_smooth
             yield node.body_id
 
             yield 0
@@ -214,8 +226,6 @@ class MyWindow(moderngl_window.WindowConfig):
                 program['projection'].write(self.projection)
 
         self.program['TREE']['lightPosition'].write(vec3(Light.x, Light.y, Light.z))
-        # self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
-        # for debug --
         self.program['TREE']['color1'].write(vec3(self.color1))
         self.program['TREE']['color2'].write(vec3(self.color2))
 
@@ -225,7 +235,6 @@ class MyWindow(moderngl_window.WindowConfig):
         self.program['TREE_OUTLINE']['resolution'].write(glm.vec2(self.width, self.height))
         self.program['TREE_OUTLINE']['outline_visibility'].value = 1.0-Tree.OUTLINE_VISIBILITY
         self.program['TREE_OUTLINE']['outline_thickness'].value = Tree.OUTLINE_THICKNESS
-
         # self.program['TREE_OUTLINE']['near'].value = self.camera.near
         # self.program['TREE_OUTLINE']['far'].value = self.camera.far
 
@@ -245,7 +254,7 @@ class MyWindow(moderngl_window.WindowConfig):
             self.update_tree_buffer()
 
         if self.updateTreeAndBuffer:
-            self.tree.update()
+            self.tree.update(self.camera.getPos())
             data = array('f', self.gen_tree_skeleton())
             self.buffer_skeleton.write(data)
 
@@ -267,8 +276,6 @@ class MyWindow(moderngl_window.WindowConfig):
     def render(self, time_since_start, frametime):
         self.update(time_since_start, frametime)
 
-
-
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
         self.ctx.wireframe = self.wireframe
 
@@ -282,10 +289,6 @@ class MyWindow(moderngl_window.WindowConfig):
                     vertices=self.tree.size() * 6,
                     instances=Tree.NB_SEGMENTS)
             self.query_debug_values['first render'] = self.query.elapsed * 10e-7
-        # if self.draw_skeleton:
-        #     self.vao_tree.render(program=self.program['LINE'], vertices=self.tree.size() * 4)
-        # if self.draw_normals:
-            # self.vao_mesh.render(program=self.program['TREE_NORMAL'])
 
         self.ctx.screen.use()
         # self.ctx.clear(0.0, 0.0, 0.0)

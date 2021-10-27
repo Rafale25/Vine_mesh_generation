@@ -71,8 +71,11 @@ def imgui_newFrame(self, frametime):
         self.tree.grow()
         self.update_tree_buffer()
 
-    if imgui.button("print"):
-        print(self.tree.nodes[0])
+    # if imgui.button("transform"):
+    #     self.buffer_mesh_tf.orphan(self.tree.size() * Tree.NB_SEGMENTS * Tree.NB_FACES * 2 * 3 * 11)
+    #     self.vao_tree.transform(
+    #         program=self.program["TREE_TRANSFORM"],
+    #         buffer=self.buffer_mesh_tf)
 
     c, self.color1 = imgui.color_edit3(
         "color 1", *self.color1
