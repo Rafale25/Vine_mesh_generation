@@ -279,7 +279,7 @@ class MyWindow(moderngl_window.WindowConfig):
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
         self.ctx.wireframe = self.wireframe
 
-        self.offscreen.clear(0.2, 0.2, 0.2)
+        self.offscreen.clear(0.5, 0.5, 0.5)
         self.offscreen.use()
 
         if self.draw_mesh:
