@@ -41,18 +41,6 @@ seconde pass:
     add outline to texture using depth and color texture
 """
 
-# debug
-global_clock = None
-
-def START_CLOCK():
-    global global_clock
-    global_clock = time.time()
-
-def STOP_CLOCK(name):
-    end_time = time.time()
-    print("timer {}: {:.2f}ms".format(name, (end_time - global_clock) * 1000))
-
-
 class MyWindow(moderngl_window.WindowConfig):
     title = 'Tree'
     gl_version = (4, 3)
@@ -70,13 +58,10 @@ class MyWindow(moderngl_window.WindowConfig):
 
         self.width, self.height = self.window_size
 
-
         self.wireframe = False
         self.cull_face = True
-        # self.draw_skeleton = False
         self.draw_mesh = True
         self.debug_active = False
-        # self.draw_normals = False
 
         self.isGrowing = False
         self.updateTreeAndBuffer = True
@@ -138,19 +123,12 @@ class MyWindow(moderngl_window.WindowConfig):
         # saved GS output by transform feedback
         self.buffer_mesh_tf = self.ctx.buffer(reserve=40)
 
-        # self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES)
-        # self.vao_tree = VAO(name="skeleton", mode=moderngl.LINES_ADJACENCY)
         self.vao_tree = VAO(name="mesh", mode=moderngl.TRIANGLES_ADJACENCY)
         self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
 
         self.vao_tree_from_buffer = VAO(name="mesh_buffer", mode=moderngl.TRIANGLES_ADJACENCY)
         self.vao_tree_from_buffer.buffer(self.buffer_mesh_tf,
             '3f 3f 3f 1i', ['in_glPos', 'in_pos', 'in_normal', 'in_branch_color'])
-
-
-        # self.vao_tree_skeleton = VAO(name="skeleton", mode=moderngl.LINES)
-        # self.vao_tree_skeleton.buffer(self.buffer_skeleton, '3f ', ['in_vert'])
-        # --
 
         # depth --
         self.quad_screen = geometry.quad_fs()
@@ -291,7 +269,6 @@ class MyWindow(moderngl_window.WindowConfig):
             self.query_debug_values['first render'] = self.query.elapsed * 10e-7
 
         self.ctx.screen.use()
-        # self.ctx.clear(0.0, 0.0, 0.0)
 
         self.color_texture.use(location=0)
         self.depth_texture.use(location=1)

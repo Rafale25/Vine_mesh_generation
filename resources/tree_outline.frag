@@ -12,7 +12,7 @@ uniform float near;
 uniform float far;
 
 uniform sampler2D texture0; // color
-uniform sampler2D texture1; // depth
+// uniform sampler2D texture1; // depth
 uniform sampler2D texture2; // branch_color
 
 float linear_depth(float z) {

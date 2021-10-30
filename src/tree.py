@@ -112,9 +112,8 @@ class Tree:
 
                     # dir = glm.normalize(glm.sub(node.pos, node.parent.pos))
                     offset = random_uniform_vec3() * 0.05
-                    offset.y = math.fabs(offset.y)
-                    # offset += node.dir() * 0.035
-                    # offset += node.dir() * 0.045
+                    # offset.y = math.fabs(offset.y)
+                    offset += node.dir() * 0.035
 
                     new_child_node = TreeNode(parent=node, pos=node.pos + offset, depth=node.depth+1, body_id=node.body_id)
                     if nb_childs > 1:
