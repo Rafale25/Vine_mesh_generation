@@ -17,6 +17,7 @@ def imgui_newFrame(self, frametime):
     c, self.cull_face = imgui.checkbox("Cull Face", self.cull_face)
 
     c, self.draw_mesh = imgui.checkbox("mesh", self.draw_mesh)
+    c, self.draw_leaves = imgui.checkbox("leaves", self.draw_leaves)
     c, self.debug_active = imgui.checkbox("debug", self.debug_active)
 
     c, self.isGrowing = imgui.checkbox("isGrowing", self.isGrowing)

@@ -36,11 +36,11 @@ class TreeNode:
 
 class Tree:
     MAX_LEN = 2.0
-    MAX_DEPTH = 50
-    MAX_DIVISION_DEPTH = 20
+    MAX_DEPTH = 20
+    MAX_DIVISION_DEPTH = 7
     MIN_CHILDS = 1
-    MAX_CHILDS = 1
-    GROW_SPEED = 0.1
+    MAX_CHILDS = 2
+    GROW_SPEED = 0.5
     OUTLINE_VISIBILITY = 1.0
     OUTLINE_THICKNESS = 1
 
@@ -112,7 +112,7 @@ class Tree:
 
                     # dir = glm.normalize(glm.sub(node.pos, node.parent.pos))
                     offset = random_uniform_vec3() * 0.05
-                    # offset.y = math.fabs(offset.y)
+                    offset.y = math.fabs(offset.y)
                     offset += node.dir() * 0.035
 
                     new_child_node = TreeNode(parent=node, pos=node.pos + offset, depth=node.depth+1, body_id=node.body_id)

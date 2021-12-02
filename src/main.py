@@ -61,6 +61,7 @@ class MyWindow(moderngl_window.WindowConfig):
         self.wireframe = False
         self.cull_face = True
         self.draw_mesh = True
+        self.draw_leaves = True
         self.debug_active = False
 
         self.isGrowing = False
@@ -82,23 +83,20 @@ class MyWindow(moderngl_window.WindowConfig):
         self.program = {
             'TREE':
                 self.load_program(
-                    vertex_shader='./tree.vert',
-                    geometry_shader='./tree.geom',
-                    fragment_shader='./tree.frag',
+                    vertex_shader='./tree/default/tree.vert',
+                    geometry_shader='./tree/default/tree.geom',
+                    fragment_shader='./tree/default/tree.frag',
                     defines={
                         'NB_SEGMENTS': Tree.NB_SEGMENTS,
                         'NB_FACES': Tree.NB_FACES}),
-            # 'TREE_TRANSFORM':
-            #     self.load_program(
-            #         vertex_shader='./tree.vert',
-            #         geometry_shader='./tree.geom',
-            #         defines={
-            #             'NB_SEGMENTS': Tree.NB_SEGMENTS,
-            #             'NB_FACES': Tree.NB_FACES}),
-            # 'TREE_FROM_BUFFER':
-            #     self.load_program(
-            #         vertex_shader='./tree_from_buffer.vert',
-            #         fragment_shader='./tree_from_buffer.frag'),
+            'TREE_LEAVES':
+                self.load_program(
+                    vertex_shader='./tree/leaves/tree.vert',
+                    geometry_shader='./tree/leaves/tree.geom',
+                    fragment_shader='./tree/leaves/tree.frag',
+                    defines={
+                        'NB_SEGMENTS': Tree.NB_SEGMENTS,
+                        'NB_FACES': Tree.NB_FACES}),
             'LINE':
                 self.load_program(
                     vertex_shader='./line.vert',
@@ -109,8 +107,8 @@ class MyWindow(moderngl_window.WindowConfig):
                     fragment_shader='./framebuffer.frag'),
             'TREE_OUTLINE':
                 self.load_program(
-                    vertex_shader='./tree_outline.vert',
-                    fragment_shader='./tree_outline.frag'),
+                    vertex_shader='./tree/outline/tree_outline.vert',
+                    fragment_shader='./tree/outline/tree_outline.frag'),
             'LINEARIZE_DEPTH':
                 self.load_program('./linearize_depth.glsl'),
         }
@@ -121,14 +119,14 @@ class MyWindow(moderngl_window.WindowConfig):
         self.update_tree_buffer()
 
         # saved GS output by transform feedback
-        self.buffer_mesh_tf = self.ctx.buffer(reserve=40)
+        # self.buffer_mesh_tf = self.ctx.buffer(reserve=40)
 
         self.vao_tree = VAO(name="mesh", mode=moderngl.TRIANGLES_ADJACENCY)
         self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
 
-        self.vao_tree_from_buffer = VAO(name="mesh_buffer", mode=moderngl.TRIANGLES_ADJACENCY)
-        self.vao_tree_from_buffer.buffer(self.buffer_mesh_tf,
-            '3f 3f 3f 1i', ['in_glPos', 'in_pos', 'in_normal', 'in_branch_color'])
+        # self.vao_tree_from_buffer = VAO(name="mesh_buffer", mode=moderngl.TRIANGLES_ADJACENCY)
+        # self.vao_tree_from_buffer.buffer(self.buffer_mesh_tf,
+        #     '3f 3f 3f 1i', ['in_glPos', 'in_pos', 'in_normal', 'in_branch_color'])
 
         # depth --
         self.quad_screen = geometry.quad_fs()
@@ -193,8 +191,6 @@ class MyWindow(moderngl_window.WindowConfig):
         self.buffer_skeleton.orphan(self.tree.size() * 12*6)
         data = array('f', self.gen_tree_skeleton())
 
-        print(data)
-
         self.buffer_skeleton.write(data)
 
     def update_uniforms(self, frametime):
@@ -209,6 +205,9 @@ class MyWindow(moderngl_window.WindowConfig):
         self.program['TREE']['lightPosition'].write(vec3(Light.x, Light.y, Light.z))
         self.program['TREE']['color1'].write(vec3(self.color1))
         self.program['TREE']['color2'].write(vec3(self.color2))
+
+        # self.program['TREE_LEAVES']['lightPosition'].write(vec3(Light.x, Light.y, Light.z))
+
 
         self.program['TREE_OUTLINE']['texture0'].value = 0
         # self.program['TREE_OUTLINE']['texture1'].value = 1
@@ -269,7 +268,15 @@ class MyWindow(moderngl_window.WindowConfig):
                     program=self.program['TREE'],
                     vertices=self.tree.size() * 6,
                     instances=Tree.NB_SEGMENTS)
-            self.query_debug_values['first render'] = self.query.elapsed * 10e-7
+            self.query_debug_values['mesh render'] = self.query.elapsed * 10e-7
+
+        if self.draw_leaves:
+            with self.query:
+                self.vao_tree.render(
+                    program=self.program['TREE_LEAVES'],
+                    vertices=self.tree.size() * 6,
+                    instances=Tree.NB_SEGMENTS)
+            self.query_debug_values['leaves render'] = self.query.elapsed * 10e-7
 
         self.ctx.screen.use()
 
