@@ -192,6 +192,9 @@ class MyWindow(moderngl_window.WindowConfig):
     def update_tree_buffer(self):
         self.buffer_skeleton.orphan(self.tree.size() * 12*6)
         data = array('f', self.gen_tree_skeleton())
+
+        print(data)
+
         self.buffer_skeleton.write(data)
 
     def update_uniforms(self, frametime):

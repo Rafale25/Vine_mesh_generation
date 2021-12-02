@@ -113,8 +113,6 @@ vec3 unpackColor(int rgb) {
 }
 
 void main() {
-
-
     float intensity = dot(normalize(lightPosition), normalize(g_normal));
 
     float value = intensity;
