@@ -77,6 +77,7 @@ class MyWindow(moderngl_window.WindowConfig):
         self.projection = glm.perspective(self.camera.fov, self.wnd.aspect_ratio, self.camera.near, self.camera.far)
 
         self.tree = Tree()
+        self.texture_leaf = self.load_texture_2d("./leaf.png", flip=False);
 
         self.query = self.ctx.query(samples=False, time=True)
 
@@ -256,7 +257,7 @@ class MyWindow(moderngl_window.WindowConfig):
     def render(self, time_since_start, frametime):
         self.update(time_since_start, frametime)
 
-        self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
+        self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST | moderngl.BLEND)
         self.ctx.wireframe = self.wireframe
 
         self.offscreen.clear(0.5, 0.5, 0.5)
@@ -271,6 +272,7 @@ class MyWindow(moderngl_window.WindowConfig):
             self.query_debug_values['mesh render'] = self.query.elapsed * 10e-7
 
         if self.draw_leaves:
+            self.texture_leaf.use(0)
             with self.query:
                 self.vao_tree.render(
                     program=self.program['TREE_LEAVES'],

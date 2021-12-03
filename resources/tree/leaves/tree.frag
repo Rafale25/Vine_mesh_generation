@@ -4,12 +4,10 @@
 
 layout(location=0) out vec4 out_color;
 
-// in vec3 g_position;
-// in vec3 g_normal;
-// in vec3 g_branch_color;
-// flat in int g_branch_color;
+in vec2 f_texCoord;
 
-uniform vec3 lightPosition;
+uniform sampler2D texture0;
+// uniform vec3 lightPosition;
 
 float rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
@@ -31,7 +29,8 @@ void main() {
 
     // for adding noise to the color
 
-    vec3 color = vec3(1.0, 0.0, 0.0);// * value;
-
-    out_color = vec4(color, 1.0);
+    // vec3 color = vec3(1.0, 0.0, 0.0);;
+    // out_color = vec4(color, 1.0);
+    vec4 color = texture(texture0, f_texCoord);
+    out_color = color;
 }

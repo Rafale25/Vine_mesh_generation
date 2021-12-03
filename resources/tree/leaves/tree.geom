@@ -5,12 +5,13 @@
 #define NB_FACES -1 // get changed when loaded
 #define NB_SEGMENTS -1 // get changed when loaded
 #define CYLINDER_INCREMENT (PI*2.0 / NB_FACES)
-#define NB_VERTICES (NB_FACES * 2*3)
+// #define NB_VERTICES (NB_FACES * 3*2)
 
 layout (triangles_adjacency) in;
-layout (line_strip, max_vertices = 2*4) out;
+layout (triangle_strip, max_vertices = 3*2) out;
 layout (invocations = NB_SEGMENTS) in;
 
+out vec2 f_texCoord;
 // out vec3 g_position;
 // out vec3 g_normal;
 // flat out int g_branch_color;
@@ -140,7 +141,7 @@ int packColor(vec3 color) {
 }
 
 
-void output_segment(vec3 node1, vec3 node2, vec3 dir1, vec3 dir2, float radius1, float radius2) {
+void output_segment(vec3 node1, vec3 node2, vec3 dir1, vec3 dir2, float radius1, float radius2, float body_id) {
     float yaw1 = atan(dir1.z, dir1.x);
     float pitch1 = atan(sqrt(dir1.z * dir1.z + dir1.x * dir1.x), dir1.y) + PI;
 
@@ -155,93 +156,56 @@ void output_segment(vec3 node1, vec3 node2, vec3 dir1, vec3 dir2, float radius1,
 
     mat4 mvp = projection * modelview;
 
-    // for (int i = 0 ; i < NB_FACES ; ++i) {
-    //     const float angle1 = CYLINDER_INCREMENT * i;
-    //     const float angle2 = CYLINDER_INCREMENT * (i + 1);
-    int i = int(rand(vec2(dir1.x*dir1.y, dir2.y*dir2.z)) * 1000.0) % 8; // what side the leaves is on
+    /* uses body id so the leave don't change position when the branch moves */
+    int i = int(rand(vec2(body_id, gl_InvocationID.x)) * 1000.0) % NB_FACES; // what side the leaves is on
     float angle = CYLINDER_INCREMENT * i;
     float x = cos(angle);
     float z = sin(angle);
 
-    vec3 p1 = vec3(0.0, 0.0, 0.0);
-    vec3 p2 = vec3(x, 0.0, z);
+    mat4 rot = calcRotateMat4(vec3(0.0, angle, 0.0));
 
-    vec4 v1 = translate_node * rot_node * vec4(p1, 1.0);
-    vec4 v2 = translate_node * rot_node * vec4(p2, 1.0);
+    /* quad
+    0 --- 3         -1;1  0;1  1;1
+    |  \  |
+    1 --- 2         -1;0  0;0  1;0
+    */
+    const float size = 1.0f;
+    vec3 q0 = vec3(-0.5f, 0.0f, 1.0f) * size;
+    vec3 q1 = vec3(-0.5f, 0.0f, 0.0f) * size;
+    vec3 q2 = vec3(0.5f, 0.0f, 0.0f) * size;
+    vec3 q3 = vec3(0.5f, 0.0f, 1.0f) * size;
 
+    q0.x += 0.1f;
+    q1.x += 0.1f;
+    q2.x += 0.1f;
+    q3.x += 0.1f;
+
+    vec4 v0 = translate_node * rot_node * rot * vec4(q0, 1.0);
+    vec4 v1 = translate_node * rot_node * rot * vec4(q1, 1.0);
+    vec4 v2 = translate_node * rot_node * rot * vec4(q2, 1.0);
+    vec4 v3 = translate_node * rot_node * rot * vec4(q3, 1.0);
+
+    gl_Position = mvp * v0;
+    f_texCoord = vec2(0.0, 0.0);
+    EmitVertex();
     gl_Position = mvp * v1;
+    f_texCoord = vec2(0.0, 1.0);
+    EmitVertex();
+    gl_Position = mvp * v2;
+    f_texCoord = vec2(1.0, 1.0);
     EmitVertex();
 
+    gl_Position = mvp * v0;
+    f_texCoord = vec2(0.0, 0.0);
+    EmitVertex();
+    gl_Position = mvp * v3;
+    f_texCoord = vec2(1.0, 0.0);
+    EmitVertex();
     gl_Position = mvp * v2;
+    f_texCoord = vec2(1.0, 1.0);
     EmitVertex();
 
     EndPrimitive();
-    // }
-    //     float x1 = cos(angle1);
-    //     float z1 = sin(angle1);
-    //
-    //     float x2 = cos(angle2);
-    //     float z2 = sin(angle2);
-    //
-    //     const vec3 p1 = vec3(x1, 0.0, z1);
-    //     const vec3 p2 = vec3(x2, 0.0, z2);
-    //
-    //     vec4 p1_node = vec4(p1 * radius1, 1.0);
-    //     vec4 p1_parent = vec4(p1 * radius2, 1.0);
-    //
-    //     vec4 p2_node = vec4(p2 * radius1, 1.0);
-    //     vec4 p2_parent = vec4(p2 * radius2, 1.0);
-    //
-    //     //triangle 1
-    //     vec4 a0_r = rot_node * p1_node;
-    //     vec4 a1_r = rot_parent * p1_parent;
-    //     vec4 a2_r = rot_node * p2_node;
-    //
-    //     vec4 a0 = translate_node * a0_r;
-    //     vec4 a1 = translate_node_parent * a1_r;
-    //     vec4 a2 = translate_node * a2_r;
-    //
-    //     // g_normal = triangle_normal(a0.xyz, a2.xyz, a1.xyz);
-    //
-    //     gl_Position = mvp * a0;
-    //     g_normal = a0_r.xyz;
-    //     g_position = a0.xyz;
-    //     EmitVertex();
-    //     gl_Position = mvp * a2;
-    //     g_normal = a2_r.xyz;
-    //     g_position = a2.xyz;
-    //     EmitVertex();
-    //     gl_Position = mvp * a1;
-    //     g_normal = a1_r.xyz;
-    //     g_position = a1.xyz;
-    //     EmitVertex();
-    //
-    //     //triangle 2
-    //     vec4 b1_r = rot_parent * p1_parent;
-    //     vec4 b2_r = rot_node * p2_node;
-    //     vec4 b3_r = rot_parent * p2_parent;
-    //
-    //     vec4 b1 = translate_node_parent * b1_r;
-    //     vec4 b2 = translate_node * b2_r;
-    //     vec4 b3 = translate_node_parent * b3_r;
-    //
-    //     // g_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz);
-    //
-    //     gl_Position = mvp * b1;
-    //     g_normal = b1_r.xyz;
-    //     g_position = b1.xyz;
-    //     EmitVertex();
-    //     gl_Position = mvp * b3;
-    //     g_normal = b3_r.xyz;
-    //     g_position = b3.xyz;
-    //     EmitVertex();
-    //     gl_Position = mvp * b2;
-    //     g_normal = b2_r.xyz;
-    //     g_position = b2.xyz;
-    //     EmitVertex();
-    //
-    //     EndPrimitive();
-    // }
 }
 
 void main() {
@@ -256,6 +220,8 @@ void main() {
     float body_id = gl_in[4].gl_Position.z;
 
     int i = gl_InvocationID.x;
+
+    // if (i % 4 >= 1) return; // discard 3/4 of the leaves
 
     const float increment = 1.0 / NB_SEGMENTS;
     float t1 = increment * i;
@@ -272,7 +238,7 @@ void main() {
     float radius1 = mix(parent_radius, node_radius, t1);
     float radius2 = mix(parent_radius, node_radius, t2);
 
-    output_segment(p1, p2, p1_dir, p2_dir, radius1, radius2);
+    output_segment(p1, p2, p1_dir, p2_dir, radius1, radius2, body_id);
 }
 
 /*
