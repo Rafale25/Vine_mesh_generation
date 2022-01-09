@@ -45,7 +45,7 @@ class MyWindow(moderngl_window.WindowConfig):
     title = 'Tree'
     gl_version = (4, 3)
     window_size = (1920, 1080)
-    fullscreen = True
+    fullscreen = False
     resizable = False
     vsync = True
     resource_dir = './resources'
