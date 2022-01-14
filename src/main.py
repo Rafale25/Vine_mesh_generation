@@ -13,6 +13,7 @@ import pyglet
 import glm
 
 import moderngl_window
+from moderngl_window import screenshot
 from moderngl_window.integrations.imgui import ModernglWindowRenderer
 from moderngl_window.opengl.projection import Projection3D
 from moderngl_window.opengl.vao import VAO
@@ -42,8 +43,8 @@ seconde pass:
 """
 
 class MyWindow(moderngl_window.WindowConfig):
-    title = 'Tree'
-    gl_version = (4, 3)
+    title = 'Vine'
+    gl_version = (4, 5)
     window_size = (1920, 1080)
     fullscreen = True
     resizable = False
@@ -62,6 +63,8 @@ class MyWindow(moderngl_window.WindowConfig):
         self.cull_face = True
         self.draw_mesh = True
         self.debug_active = False
+
+        self.take_screenshot = False
 
         self.isGrowing = False
         self.updateTreeAndBuffer = True
@@ -280,8 +283,6 @@ class MyWindow(moderngl_window.WindowConfig):
             self.quad_screen.render(self.program['TREE_OUTLINE'])
         self.query_debug_values['second render'] = self.query.elapsed * 10e-7
 
-        # BUG: the previous texture depth are problematic
-
         ## draw debugs--
         self.ctx.disable(moderngl.DEPTH_TEST)
 
@@ -308,6 +309,10 @@ class MyWindow(moderngl_window.WindowConfig):
 
         self.imgui_newFrame(frametime)
         self.imgui_render()
+
+        if self.take_screenshot:
+            self.take_screenshot = False
+            moderngl_window.screenshot.create(source=self.ctx.screen)
 
     def cleanup(self):
         print('Cleaning up ressources.')

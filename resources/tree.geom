@@ -163,7 +163,7 @@ void output_segment(vec3 node1, vec3 node2, vec3 dir1, vec3 dir2, float radius1,
 
 // t: 0.0 -> 1.0
 vec3 getSplinePoint(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {
-    t = t - int(t);
+    // t = t - int(t); // not used because t never goes above 1.0
 
     float tt = t * t;
     float ttt = tt * t;
@@ -192,7 +192,7 @@ vec3 getSplinePoint(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {
 }
 
 vec3 getSplineGradient(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {
-    t = t - int(t);
+    // t = t - int(t); // not used because t never goes above 1.0
 
     float tt = t * t;
     float ttt = tt * t;
@@ -243,7 +243,7 @@ void main() {
 
     const float increment = 1.0 / NB_SEGMENTS;
     float t1 = increment * i;
-    float t2 = clamp(increment * (i + 1), 0.0, 0.9999);
+    float t2 = increment * (i + 1);
 
     vec3 p1 = getSplinePoint(parent_parent, node_parent, node, node_child, t1);
     vec3 p2 = getSplinePoint(parent_parent, node_parent, node, node_child, t2);

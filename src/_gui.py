@@ -84,6 +84,8 @@ def imgui_newFrame(self, frametime):
         "color 2", *self.color2
     )
 
+    self.take_screenshot = imgui.button("take screenshot")
+
     imgui.end()
 
 def imgui_render(self):
