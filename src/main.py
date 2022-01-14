@@ -13,6 +13,7 @@ import pyglet
 import glm
 
 import moderngl_window
+from moderngl_window import screenshot
 from moderngl_window.integrations.imgui import ModernglWindowRenderer
 from moderngl_window.opengl.projection import Projection3D
 from moderngl_window.opengl.vao import VAO
@@ -26,6 +27,7 @@ from array import array
 from utils import *
 from _config import CameraOrbit, Camera, Light
 
+from fps_counter import FpsCounter
 from tree import Tree, TreeNode
 
 """
@@ -38,17 +40,16 @@ first pass:
 
 seconde pass:
     add outline to texture using depth and color texture
-
 """
 
 class MyWindow(moderngl_window.WindowConfig):
-    title = "Tree"
-    gl_version = (4, 3)
-    window_size = (1280, 720)
-    fullscreen = False
+    title = 'Vine'
+    gl_version = (4, 5)
+    window_size = (1920, 1080)
+    fullscreen = True
     resizable = False
     vsync = True
-    resource_dir = "./resources"
+    resource_dir = './resources'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -58,156 +59,143 @@ class MyWindow(moderngl_window.WindowConfig):
 
         self.width, self.height = self.window_size
 
-        self.ctx.wireframe = False
-
+        self.wireframe = False
         self.cull_face = True
-        self.draw_skeleton = False
-        self.draw_normals = False
         self.draw_mesh = True
+        self.debug_active = False
 
+        self.take_screenshot = False
+
+        self.isGrowing = False
+        self.updateTreeAndBuffer = True
+
+        # for testing
+        self.color1 = vec3(0.4, 0.7, 0.0)
+        self.color2 = vec3(0.3, 0.3, 0.0)
+
+        self.query_debug_values = {}
+        self.fps_counter = FpsCounter()
         self.camera = Camera()
-
         self.projection = glm.perspective(self.camera.fov, self.wnd.aspect_ratio, self.camera.near, self.camera.far)
-        # self.projection = Projection3D(
-        #     fov=self.camera.fov,
-        #     aspect_ratio=self.wnd.aspect_ratio,
-        #     near=1.0,
-        #     far=100.0,
-        # )
 
         self.tree = Tree()
-        self.tree.generate()
+
+        self.query = self.ctx.query(samples=False, time=True)
 
         self.program = {
-            "TREE":
+            'TREE':
                 self.load_program(
-                    vertex_shader="./tree.vert",
-                    fragment_shader="./tree.frag"),
-            "TREE_NORMAL":
+                    vertex_shader='./tree.vert',
+                    geometry_shader='./tree.geom',
+                    fragment_shader='./tree.frag',
+                    defines={
+                        'NB_SEGMENTS': Tree.NB_SEGMENTS,
+                        'NB_FACES': Tree.NB_FACES}),
+            # 'TREE_TRANSFORM':
+            #     self.load_program(
+            #         vertex_shader='./tree.vert',
+            #         geometry_shader='./tree.geom',
+            #         defines={
+            #             'NB_SEGMENTS': Tree.NB_SEGMENTS,
+            #             'NB_FACES': Tree.NB_FACES}),
+            # 'TREE_FROM_BUFFER':
+            #     self.load_program(
+            #         vertex_shader='./tree_from_buffer.vert',
+            #         fragment_shader='./tree_from_buffer.frag'),
+            'LINE':
                 self.load_program(
-                    vertex_shader="./tree_normal.vert",
-                    fragment_shader="./tree_normal.frag",
-                    geometry_shader="./tree_normal.geom"),
-            "LINE":
+                    vertex_shader='./line.vert',
+                    fragment_shader='./line.frag'),
+            'FRAMEBUFFER':
                 self.load_program(
-                    vertex_shader="./line.vert",
-                    fragment_shader="./line.frag"),
+                    vertex_shader='./framebuffer.vert',
+                    fragment_shader='./framebuffer.frag'),
+            'TREE_OUTLINE':
+                self.load_program(
+                    vertex_shader='./tree_outline.vert',
+                    fragment_shader='./tree_outline.frag'),
+            'LINEARIZE_DEPTH':
+                self.load_program('./linearize_depth.glsl'),
         }
 
         ## skeleton --
-        self.buffer_debug = self.ctx.buffer(data=array('f', self.gen_tree_skeleton()))
+        self.buffer_skeleton = self.ctx.buffer(reserve=12*6)
+        self.tree.clear()
+        self.update_tree_buffer()
 
-        self.vao_lines = VAO(name="skeleton", mode=moderngl.LINES)
-        self.vao_lines.buffer(self.buffer_debug, '3f', ['in_vert'])
-        # --
+        # saved GS output by transform feedback
+        self.buffer_mesh_tf = self.ctx.buffer(reserve=40)
 
+        self.vao_tree = VAO(name="mesh", mode=moderngl.TRIANGLES_ADJACENCY)
+        self.vao_tree.buffer(self.buffer_skeleton, '3f', ['in_vert'])
 
-        ## mesh --
-        self.buffer_mesh = self.ctx.buffer(data=array('f', self.gen_tree_mesh()))
-
-        self.vao_mesh = VAO(name="mesh", mode=moderngl.TRIANGLES)
-        self.vao_mesh.buffer(self.buffer_mesh, '3f 3f', ['in_vert', 'in_normal'])
-        # --
-
+        self.vao_tree_from_buffer = VAO(name="mesh_buffer", mode=moderngl.TRIANGLES_ADJACENCY)
+        self.vao_tree_from_buffer.buffer(self.buffer_mesh_tf,
+            '3f 3f 3f 1i', ['in_glPos', 'in_pos', 'in_normal', 'in_branch_color'])
 
         # depth --
+        self.quad_screen = geometry.quad_fs()
+        self.quad_branch_color = geometry.quad_2d(size=(0.5, 0.5), pos=(-0.25, 0.75))
+        self.quad_color = geometry.quad_2d(size=(0.5, 0.5), pos=(0.25, 0.75))
         self.quad_depth = geometry.quad_2d(size=(0.5, 0.5), pos=(0.75, 0.75))
 
-        self.offscreen_depth_texture = self.ctx.depth_texture(self.wnd.buffer_size)
+        self.color_texture = self.ctx.texture(self.wnd.buffer_size, 4)
+        self.branch_color_texture = self.ctx.texture(self.wnd.buffer_size, 4)
+        self.depth_texture = self.ctx.depth_texture(self.wnd.buffer_size)
         self.offscreen = self.ctx.framebuffer(
-            depth_attachment=self.offscreen_depth_texture,
+            color_attachments=[
+                self.color_texture,
+                self.branch_color_texture,
+            ],
+            depth_attachment=self.depth_texture,
         )
-
-        self.geometry_program = self.load_program('geometry.glsl')
-
-        self.linearize_depth_program = self.load_program('linearize_depth.glsl')
-        self.linearize_depth_program['texture0'].value = 0
-        self.linearize_depth_program['near'].value = self.camera.near
-        self.linearize_depth_program['far'].value = self.camera.far
-        # --
 
         self.init_debug_draw()
 
-# """
-# 1 - 3 - 5
-# | \ | \ |
-# 0 - 2 - 4
-#
-# #indices for NB=3 ; GL_TRIANGLES
-# 0 2 1
-# 1 2 3
-#
-# 2 4 3
-# 3 4 5
-# """
-
-    # vertex, normals (not indices because normals need duplicated vertex data)
-    def gen_tree_mesh(self, NB=16, branch_thickness=0.1):
-        data = []
-
-        for j, node in enumerate(self.tree.nodes):
-            dir = glm.sub(node.parent.pos, node.pos)
-
-            mat_translate_parent = glm.translate(glm.mat4(), node.parent.pos)
-            mat_translate_self = glm.translate(glm.mat4(), node.pos)
-            mat_rotate = glm.orientation(dir, vec3(0,1,0))
-
-            for i in range(NB):
-                angle1 = (math.pi*2.0 / NB) * i
-                angle2 = (math.pi*2.0 / NB) * (i + 1)
-
-                x1 = cos(angle1) * branch_thickness
-                z1 = sin(angle1) * branch_thickness
-
-                x2 = cos(angle2) * branch_thickness
-                z2 = sin(angle2) * branch_thickness
-
-                p1 = vec4(x1, 0, z1, 1.0)
-                p2 = vec4(x2, 0, z2, 1.0)
-
-                # triangle 1
-                a0 = mat_translate_self * mat_rotate * p1
-                a1 = mat_translate_parent * mat_rotate * p1
-                a2 = mat_translate_self * mat_rotate * p2
-
-                a_normal = triangle_normal(a0.xyz, a1.xyz, a2.xyz)
-
-                data.extend(a0.xyz)
-                data.extend(a_normal) # one for each of the 3 vertices
-
-                data.extend(a1.xyz)
-                data.extend(a_normal)
-
-                data.extend(a2.xyz)
-                data.extend(a_normal)
-
-                # triangle 2
-                b1 = mat_translate_parent * mat_rotate * p1
-                b3 = mat_translate_self * mat_rotate * p2
-                b2 = mat_translate_parent * mat_rotate * p2
-
-                b_normal = triangle_normal(b1.xyz, b2.xyz, b3.xyz)
-
-                data.extend(b1.xyz)
-                data.extend(b_normal)
-
-                data.extend(b2.xyz)
-                data.extend(b_normal)
-
-                data.extend(b3.xyz)
-                data.extend(b_normal)
-
-        return data
-
     def gen_tree_skeleton(self):
         for node in self.tree.nodes:
-            yield node.pos.x
-            yield node.pos.y
-            yield node.pos.z
+            # node
+            yield node.pos_smooth.x
+            yield node.pos_smooth.y
+            yield node.pos_smooth.z
 
-            yield node.parent.pos.x
-            yield node.parent.pos.y
-            yield node.parent.pos.z
+            # node parent
+            yield node.parent.pos_smooth.x
+            yield node.parent.pos_smooth.y
+            yield node.parent.pos_smooth.z
+
+            # parent of parent for curve
+            if node.parent.parent:
+                yield node.parent.parent.pos_smooth.x
+                yield node.parent.parent.pos_smooth.y
+                yield node.parent.parent.pos_smooth.z
+            else:
+                yield node.parent.pos_smooth.x
+                yield node.parent.pos_smooth.y
+                yield node.parent.pos_smooth.z
+
+            # node child for curve
+            if len(node.childs) > 0:
+                yield node.childs[0].pos_smooth.x
+                yield node.childs[0].pos_smooth.y
+                yield node.childs[0].pos_smooth.z
+            else:
+                yield node.pos_smooth.x
+                yield node.pos_smooth.y
+                yield node.pos_smooth.z
+
+            yield node.parent.radius_smooth
+            yield node.radius_smooth
+            yield node.body_id
+
+            yield 0
+            yield 0
+            yield 0
+
+    def update_tree_buffer(self):
+        self.buffer_skeleton.orphan(self.tree.size() * 12*6)
+        data = array('f', self.gen_tree_skeleton())
+        self.buffer_skeleton.write(data)
 
     def update_uniforms(self, frametime):
         modelview = self.camera.view_matrix()
@@ -218,18 +206,38 @@ class MyWindow(moderngl_window.WindowConfig):
             if 'projection' in program:
                 program['projection'].write(self.projection)
 
-        self.geometry_program['modelview'].write(modelview)
-        self.geometry_program['projection'].write(self.projection)
+        self.program['TREE']['lightPosition'].write(vec3(Light.x, Light.y, Light.z))
+        self.program['TREE']['color1'].write(vec3(self.color1))
+        self.program['TREE']['color2'].write(vec3(self.color2))
 
-        self.program["TREE"]["lightPosition"].write(vec3(Light.x, Light.y, Light.z))
-        self.program["TREE"]["resolution"].write(glm.vec2(self.width, self.height))
-        self.program["TREE"]['near'].value = self.camera.near
-        self.program["TREE"]['far'].value = self.camera.far
+        self.program['TREE_OUTLINE']['texture0'].value = 0
+        # self.program['TREE_OUTLINE']['texture1'].value = 1
+        self.program['TREE_OUTLINE']['texture2'].value = 2
+        self.program['TREE_OUTLINE']['resolution'].write(glm.vec2(self.width, self.height))
+        self.program['TREE_OUTLINE']['outline_visibility'].value = 1.0-Tree.OUTLINE_VISIBILITY
+        self.program['TREE_OUTLINE']['outline_thickness'].value = Tree.OUTLINE_THICKNESS
+        # self.program['TREE_OUTLINE']['near'].value = self.camera.near
+        # self.program['TREE_OUTLINE']['far'].value = self.camera.far
+
+        self.program['LINEARIZE_DEPTH']['texture0'].value = 0
+        self.program['LINEARIZE_DEPTH']['near'].value = self.camera.near
+        self.program['LINEARIZE_DEPTH']['far'].value = self.camera.far
 
     def update(self, time_since_start, frametime):
         Light.x = cos(time_since_start*0.2) * 6.0
         Light.y = 6.0
         Light.z = sin(time_since_start*0.2) * 6.0
+
+        self.fps_counter.update(frametime)
+
+        if self.isGrowing:
+            self.tree.grow()
+            self.update_tree_buffer()
+
+        if self.updateTreeAndBuffer:
+            self.tree.update(self.camera.getPos())
+            data = array('f', self.gen_tree_skeleton())
+            self.buffer_skeleton.write(data)
 
         if self.wnd.is_key_pressed(self.wnd.keys.Z):
             self.camera.move_forward(self.camera.speed)
@@ -249,50 +257,81 @@ class MyWindow(moderngl_window.WindowConfig):
     def render(self, time_since_start, frametime):
         self.update(time_since_start, frametime)
 
-        self.ctx.clear(0.5, 0.5, 0.5)
         self.ctx.enable_only(moderngl.CULL_FACE * self.cull_face | moderngl.DEPTH_TEST)
+        self.ctx.wireframe = self.wireframe
 
-        ## draw to depth_buffer --
-        self.offscreen.clear()
+        self.offscreen.clear(0.5, 0.5, 0.5)
         self.offscreen.use()
 
-        self.vao_mesh.render(program=self.geometry_program)
+        if self.draw_mesh:
+            with self.query:
+                self.vao_tree.render(
+                    program=self.program['TREE'],
+                    vertices=self.tree.size() * 6,
+                    instances=Tree.NB_SEGMENTS)
+            self.query_debug_values['first render'] = self.query.elapsed * 10e-7
 
         self.ctx.screen.use()
 
-        self.offscreen_depth_texture.use(location=0)
-        if self.draw_mesh:
-            self.vao_mesh.render(program=self.program["TREE"])
-        if self.draw_normals:
-            self.vao_mesh.render(program=self.program["TREE_NORMAL"])
-        if self.draw_skeleton:
-            self.vao_lines.render(program=self.program["LINE"])
+        self.color_texture.use(location=0)
+        self.depth_texture.use(location=1)
+        self.branch_color_texture.use(location=2)
 
-        self.debug_line(0, 0, 0, 0.5, 0, 0)
-        self.debug_line(0, 0, 0, 0, 0.5, 0)
-        self.debug_line(0, 0, 0, 0, 0, 0.5)
-        self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
-        self.debug_draw()
+        self.ctx.wireframe = False
 
+        with self.query:
+            self.quad_screen.render(self.program['TREE_OUTLINE'])
+        self.query_debug_values['second render'] = self.query.elapsed * 10e-7
 
-        ## draw debug depthbuffer --
+        ## draw debugs--
         self.ctx.disable(moderngl.DEPTH_TEST)
-        self.quad_depth.render(self.linearize_depth_program)
+
+        if self.debug_active:
+            for node in self.tree.nodes:
+                self.debug_line(*node.pos.xyz, *node.parent.pos.xyz)
+
+            self.debug_line(0, 0, 0, 0.5, 0, 0)
+            self.debug_line(0, 0, 0, 0, 0.5, 0)
+            self.debug_line(0, 0, 0, 0, 0, 0.5)
+            self.debug_sphere(Light.x, Light.y, Light.z, 0.5)
+            self.debug_draw()
+
+        self.branch_color_texture.use(location=0)
+        self.quad_branch_color.render(self.program['FRAMEBUFFER'])
+
+        self.color_texture.use(location=0)
+        self.quad_color.render(self.program['FRAMEBUFFER'])
+
+        self.depth_texture.use(location=0)
+        # self.depth_sampler.use(location=0)  # temp override the parameters
+        self.quad_depth.render(self.program['LINEARIZE_DEPTH'])
+        # self.depth_sampler.clear(location=0)  # Remove the override
 
         self.imgui_newFrame(frametime)
         self.imgui_render()
 
+        if self.take_screenshot:
+            self.take_screenshot = False
+            moderngl_window.screenshot.create(source=self.ctx.screen)
+
     def cleanup(self):
-        print("Cleaning up ressources.")
-        self.buffer_debug.release()
-        self.buffer_mesh.release()
-        self.offscreen_depth_texture.release()
+        print('Cleaning up ressources.')
+        self.vao_tree.release()
+
+        self.color_texture.release()
+        self.branch_color_texture.release()
+        self.depth_texture.release()
         self.offscreen.release()
-        self.geometry_program.release()
-        self.linearize_depth_program.release()
+
+        self.quad_screen.release()
+        self.quad_branch_color.release()
+        self.quad_color.release()
+        self.quad_depth.release()
 
         for str, program in self.program.items():
             program.release()
+
+        self._debug_vao.release()
 
     def __del__(self):
         self.cleanup()
@@ -321,7 +360,6 @@ class MyWindow(moderngl_window.WindowConfig):
         unicode_char_entered
 
 def main():
-    # sys.setrecursionlimit(10_000)
     MyWindow.run()
 
 if __name__ == "__main__":
